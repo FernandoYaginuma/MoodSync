@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:moodsync/theme/colors.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const bluelogo = Color.fromARGB(255, 0, 195, 255);
-    const blankbackground = Color(0xFFF6FCFF);
 
     return Scaffold(
-      backgroundColor: blankbackground,
+      backgroundColor: AppColors.blankBackground,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
@@ -43,7 +42,7 @@ class LoginScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/forgot-password'),
                     child: const Text(
                       'Esqueceu a senha?',
-                      style: TextStyle(color: bluelogo),
+                      style: TextStyle(color: AppColors.blueLogo),
                     ),
                   ),
                 ),
@@ -59,6 +58,10 @@ class LoginScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/register'),
                   child: const Text('Cadastrar'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/about'),
+                  child: const Text('Sobre o Projeto'),
                 ),
               ],
             ),

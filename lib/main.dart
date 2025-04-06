@@ -4,6 +4,7 @@ import 'package:device_preview/device_preview.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/about_screen.dart';
 import 'theme/colors.dart';
 
 void main() {
@@ -41,10 +42,11 @@ class MentalHealthApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/forgot-password': (context) => const ForgotPasswordScreen(),
-      },
+      '/': (context) => const LoginScreen(),
+      '/register': (context) => const RegisterScreen(),
+      '/forgot-password': (context) => const ForgotPasswordScreen(),
+      '/about': (context) => const AboutScreen(),
+    },
     );
   }
 }
