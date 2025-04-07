@@ -1,52 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
-
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/forgot_password_screen.dart';
-import 'screens/about_screen.dart';
-import 'theme/colors.dart';
+import 'package:android2/View/calendar_view.dart';
+import 'package:android2/View/day_view.dart';
+import 'package:android2/View/professional_view.dart'; // NOVO: importar a tela Professional
 
 void main() {
   runApp(
     DevicePreview(
       enabled: true,
-      builder: (context) => const MentalHealthApp(),
+      builder: (context) => const MyApp(),
     ),
   );
 }
 
-class MentalHealthApp extends StatelessWidget {
-  const MentalHealthApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
-      debugShowCheckedModeBanner: false,
-      title: 'Saúde Mental MVP',
+      title: 'Diário de Emoções',
       theme: ThemeData(
-        primaryColor: AppColors.blueLogo,
-        scaffoldBackgroundColor: AppColors.blankBackground,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.blueLogo,
-            foregroundColor: Colors.white,
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.blueLogo,
-          foregroundColor: Colors.white,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
-      '/': (context) => const LoginScreen(),
-      '/register': (context) => const RegisterScreen(),
-      '/forgot-password': (context) => const ForgotPasswordScreen(),
-      '/about': (context) => const AboutScreen(),
-    },
+        '/': (context) => const CalendarView(),
+        '/day': (context) {
+          final selectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
+          return DayView(selectedDate: selectedDate);
+        },
+        '/professional': (context) => const ProfessionalView(), // NOVO
+      },
     );
   }
 }

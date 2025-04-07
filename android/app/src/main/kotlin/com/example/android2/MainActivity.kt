@@ -1,4 +1,4 @@
-package com.example.moodsync
+package com.example.android2
 
 import io.flutter.embedding.android.FlutterActivity
 
