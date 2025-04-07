@@ -8,6 +8,7 @@ import 'package:android2/View/login_view.dart';
 import 'package:android2/View/register_view.dart';
 import 'package:android2/View/forgot_password_view.dart';
 import 'package:android2/View/about_view.dart';
+import 'package:android2/View/home_view.dart';
 
 void main() {
   runApp(
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginView(),
+        '/': (context) => LoginHomeView(),
         '/register': (context) => const RegisterView(),
         '/forgot-password': (context) => const ForgotPasswordView(),
         '/about': (context) => AboutView(),
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
           return DayView(selectedDate: selectedDate);
         },
         '/professional': (context) => const ProfessionalView(),
+        '/home': (context) => const HomeView(),
       },
     );
   }

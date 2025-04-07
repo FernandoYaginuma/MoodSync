@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:android2/Controller/login_controller.dart';
 import 'package:android2/theme/colors.dart';
 
-class LoginView extends StatelessWidget {
+class LoginHomeView extends StatelessWidget {
   final LoginController controller = LoginController();
 
-  LoginView({super.key});
+  LoginHomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,58 +15,67 @@ class LoginView extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Image.asset(
-                  'lib/images/MoodSyncLogo.png',
-                  height: 250,
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: controller.emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Usuário ou E-mail',
-                    border: OutlineInputBorder(),
+            child: Form(
+              key: controller.formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Image.asset(
+                    'lib/images/MoodSyncLogo.png',
+                    height: 250,
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller.senhaController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Senha',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: controller.usuarioOuEmailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Usuário ou E-mail',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Informe seu usuário ou e-mail' : null,
                   ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
-                    child: const Text(
-                      'Esqueceu a senha?',
-                      style: TextStyle(color: AppColors.blueLogo),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: controller.senhaController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Senha',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Informe sua senha' : null,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                      child: const Text(
+                        'Esqueceu a senha?',
+                        style: TextStyle(color: AppColors.blueLogo),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () => controller.login(context),
-                    child: const Text('Entrar'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => controller.fazerLogin(context),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.blueLogo),
+                      child: const Text('Entrar',
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register'),
-                  child: const Text('Cadastrar'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/about'),
-                  child: const Text('Sobre o Projeto'),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text('Cadastrar'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/about'),
+                    child: const Text('Sobre o Projeto'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

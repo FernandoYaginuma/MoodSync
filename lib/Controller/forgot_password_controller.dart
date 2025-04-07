@@ -6,14 +6,12 @@ class ForgotPasswordController {
   final novaSenhaController = TextEditingController();
   final confirmarSenhaController = TextEditingController();
 
-  // ✅ Método que verifica se o e-mail está salvo localmente
   Future<bool> verificarEmail(String email) async {
     final prefs = await SharedPreferences.getInstance();
     final emailSalvo = prefs.getString('email');
     return emailSalvo == email;
   }
 
-  // ✅ Método que redefine a senha e salva localmente
   Future<void> redefinirSenha(BuildContext context) async {
     final novaSenha = novaSenhaController.text;
     final confirmar = confirmarSenhaController.text;
