@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:android2/theme/colors.dart';
+import 'package:android2/Controller/home_controller.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -11,35 +11,25 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  String nomeUsuario = '';
+  final HomeController controller = HomeController();
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
   @override
   void initState() {
     super.initState();
-    carregarNome();
+    controller.carregarNome();
     _selectedDay = _focusedDay;
   }
 
-  Future<void> carregarNome() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nome = prefs.getString('nome') ?? 'Usuário';
-    setState(() {
-      nomeUsuario = nome;
-    });
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   void irParaCalendarioCompleto() {
     Navigator.pushNamed(context, '/calendar');
-  }
-
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-    }
   }
 
   @override
@@ -51,7 +41,7 @@ class _HomeViewState extends State<HomeView> {
         title: const Text('MoodSync'),
         actions: [
           IconButton(
-            onPressed: logout,
+            onPressed: () => controller.logout(context),
             icon: const Icon(Icons.logout),
             tooltip: 'Sair',
           ),
@@ -61,9 +51,14 @@ class _HomeViewState extends State<HomeView> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(
-              'Bem-vindo, $nomeUsuario!',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+            ValueListenableBuilder<String>(
+              valueListenable: controller.nomeUsuario,
+              builder: (context, nome, _) {
+                return Text(
+                  'Bem-vindo, $nome!',
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                );
+              },
             ),
             const SizedBox(height: 16),
             Card(

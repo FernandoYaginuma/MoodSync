@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeController {
-  final ValueNotifier<String> nomeUsuario = ValueNotifier<String>('Usuário');
+  final ValueNotifier<String> nomeUsuario = ValueNotifier('Usuário');
 
   Future<void> carregarNome() async {
     final prefs = await SharedPreferences.getInstance();
@@ -12,10 +12,11 @@ class HomeController {
 
   Future<void> logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-    }
+    await prefs.clear();
+
+    if (!context.mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   void dispose() {

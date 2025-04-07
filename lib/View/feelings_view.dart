@@ -1,3 +1,4 @@
+import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
 
 class FeelingsView extends StatefulWidget {
@@ -48,17 +49,17 @@ class _FeelingsViewState extends State<FeelingsView> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.grey,
+                    color: isSelected ? AppColors.blueLogo : Colors.grey,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? Colors.blue.shade50 : Colors.transparent,
+                  color: isSelected ? AppColors.blankBackground : Colors.transparent,
                 ),
                 child: Text(
                   feeling,
                   style: TextStyle(
                     fontSize: 18,
-                    color: isSelected ? Colors.blue : Colors.black87,
+                    color: isSelected ? AppColors.blueLogo : AppColors.blackBackground,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),

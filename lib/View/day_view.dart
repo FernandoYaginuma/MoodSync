@@ -1,3 +1,4 @@
+import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'feelings_view.dart';
 
@@ -119,8 +120,8 @@ class _DayViewState extends State<DayView> {
             ElevatedButton(
               onPressed: _escolherSentimento,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.black87,
+                backgroundColor: AppColors.blankBackground,
+                foregroundColor: AppColors.blackBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -132,8 +133,8 @@ class _DayViewState extends State<DayView> {
             ElevatedButton(
               onPressed: _salvar,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.blueLogo,
+                foregroundColor: AppColors.blankBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
