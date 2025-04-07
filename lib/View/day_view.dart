@@ -66,11 +66,15 @@ class _DayViewState extends State<DayView> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormatted = "${widget.selectedDate.day.toString().padLeft(2, '0')}/${widget.selectedDate.month.toString().padLeft(2, '0')}/${widget.selectedDate.year}";
+    final dateFormatted =
+        "${widget.selectedDate.day.toString().padLeft(2, '0')}/${widget.selectedDate.month.toString().padLeft(2, '0')}/${widget.selectedDate.year}";
 
     return Scaffold(
+      backgroundColor: AppColors.blankBackground,
       appBar: AppBar(
         title: Text('Dia $dateFormatted'),
+        backgroundColor: AppColors.blueLogo,
+        foregroundColor: AppColors.blackBackground,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -81,7 +85,7 @@ class _DayViewState extends State<DayView> {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppColors.blueLogo.withAlpha(25),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -90,7 +94,7 @@ class _DayViewState extends State<DayView> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
+                      color: AppColors.blueLogo,
                     ),
                   ),
                 ),
@@ -98,7 +102,11 @@ class _DayViewState extends State<DayView> {
             const SizedBox(height: 16),
             const Text(
               "Descreva seu dia:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.blackBackground,
+              ),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -110,6 +118,7 @@ class _DayViewState extends State<DayView> {
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.blueLogo),
                   ),
                   hintText: 'Escreva aqui...',
                   contentPadding: const EdgeInsets.all(12),
@@ -122,6 +131,7 @@ class _DayViewState extends State<DayView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blankBackground,
                 foregroundColor: AppColors.blackBackground,
+                side: const BorderSide(color: AppColors.blackBackground),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),

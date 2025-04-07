@@ -17,7 +17,11 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Calendário")),
+      appBar: AppBar(
+        title: const Text("Calendário"),
+        backgroundColor: AppColors.blueLogo,
+        foregroundColor: AppColors.blackBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -27,7 +31,25 @@ class _CalendarViewState extends State<CalendarView> {
               lastDay: DateTime.utc(2025, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: CalendarFormat.month,
-              headerStyle: const HeaderStyle(formatButtonVisible: false),
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextStyle: TextStyle(
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              calendarStyle: const CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: AppColors.blueLogo,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.orangeAccent,
+                  shape: BoxShape.circle,
+                ),
+              ),
               selectedDayPredicate: (_) => false,
               onDaySelected: (selectedDay, focusedDay) {
                 setState(() {
@@ -43,7 +65,6 @@ class _CalendarViewState extends State<CalendarView> {
               },
             ),
             const SizedBox(height: 20),
-
             if (_selectedDay != null) ...[
               Text(
                 "Selecionado: ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}",

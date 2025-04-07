@@ -26,8 +26,11 @@ class _FeelingsViewState extends State<FeelingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.blankBackground,
       appBar: AppBar(
         title: const Text("Selecione seu sentimento"),
+        backgroundColor: AppColors.blueLogo,
+        foregroundColor: AppColors.blackBackground,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -49,11 +52,11 @@ class _FeelingsViewState extends State<FeelingsView> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? AppColors.blueLogo : Colors.grey,
+                    color: isSelected ? AppColors.blueLogo : Colors.grey.shade400,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? AppColors.blankBackground : Colors.transparent,
+                  color: isSelected ? AppColors.blueLogo.withAlpha(25) : Colors.transparent,
                 ),
                 child: Text(
                   feeling,

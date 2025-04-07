@@ -1,3 +1,4 @@
+import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
 
 class ProfessionalView extends StatefulWidget {
@@ -95,8 +96,8 @@ class _ProfessionalViewState extends State<ProfessionalView> {
             ElevatedButton(
               onPressed: _saveProfessionals,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.blueLogo,
+                foregroundColor: AppColors.blankBackground,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: const Text("Salvar"),
