@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
+
 import 'package:android2/View/calendar_view.dart';
 import 'package:android2/View/day_view.dart';
-import 'package:android2/View/professional_view.dart'; // NOVO: importar a tela Professional
+import 'package:android2/View/professional_view.dart';
+import 'package:android2/View/login_view.dart';
+import 'package:android2/View/register_view.dart';
+import 'package:android2/View/forgot_password_view.dart';
+import 'package:android2/View/about_view.dart';
 
 void main() {
   runApp(
@@ -22,19 +27,23 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
-      title: 'Diário de Emoções',
+      title: 'MoodSync',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const CalendarView(),
+        '/': (context) => LoginView(),
+        '/register': (context) => const RegisterView(),
+        '/forgot-password': (context) => const ForgotPasswordView(),
+        '/about': (context) => AboutView(),
+        '/calendar': (context) => const CalendarView(),
         '/day': (context) {
           final selectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
           return DayView(selectedDate: selectedDate);
         },
-        '/professional': (context) => const ProfessionalView(), // NOVO
+        '/professional': (context) => const ProfessionalView(),
       },
     );
   }
