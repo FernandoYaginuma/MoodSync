@@ -4,15 +4,24 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
 class CalendarView extends StatefulWidget {
-  const CalendarView({super.key});
+  final DateTime initialDate;
+
+  const CalendarView({super.key, required this.initialDate});
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
 }
 
 class _CalendarViewState extends State<CalendarView> {
-  DateTime _focusedDay = DateTime.now();
+  late DateTime _focusedDay;
   DateTime? _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDay = widget.initialDate;
+    _selectedDay = widget.initialDate;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +59,7 @@ class _CalendarViewState extends State<CalendarView> {
                   shape: BoxShape.circle,
                 ),
               ),
-              selectedDayPredicate: (_) => false,
+              selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
               onDaySelected: (selectedDay, focusedDay) {
                 setState(() {
                   _selectedDay = selectedDay;

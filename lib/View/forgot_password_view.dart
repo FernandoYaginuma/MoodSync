@@ -11,7 +11,6 @@ class ForgotPasswordView extends StatefulWidget {
 
 class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   final controller = ForgotPasswordController();
-
   bool emailConfirmado = false;
 
   @override
@@ -29,10 +28,10 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         emailConfirmado = true;
       });
     } else {
-        if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('E-mail não encontrado')),
-         );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('E-mail não encontrado')),
+      );
     }
   }
 
@@ -41,17 +40,22 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     return Scaffold(
       backgroundColor: AppColors.blankBackground,
       appBar: AppBar(
+        backgroundColor: AppColors.blueLogo,
+        foregroundColor: AppColors.blackBackground,
         title: const Text('Recuperar Senha'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!emailConfirmado) ...[
               const Text(
                 'Digite seu e-mail para redefinir a senha:',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.blackBackground,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -67,14 +71,24 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blueLogo,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: validarEmail,
-                  child: const Text('Confirmar', style: TextStyle(fontSize: 16)),
+                  child: const Text(
+                    'Confirmar',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ] else ...[
               const Text(
                 'Digite sua nova senha:',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.blackBackground,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -99,8 +113,15 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blueLogo,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () => controller.redefinirSenha(context),
-                  child: const Text('Redefinir Senha', style: TextStyle(fontSize: 16)),
+                  child: const Text(
+                    'Redefinir Senha',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ],

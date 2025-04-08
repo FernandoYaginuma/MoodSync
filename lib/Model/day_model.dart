@@ -8,4 +8,6 @@ class DayModel {
     this.note = '',
     this.emotion,
   });
+
+  String get formattedDate => "${date.year}-${date.month}-${date.day}";
 }

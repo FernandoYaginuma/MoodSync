@@ -39,7 +39,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterView(),
         '/forgot-password': (context) => const ForgotPasswordView(),
         '/about': (context) => AboutView(),
-        '/calendar': (context) => const CalendarView(),
+        '/calendar': (context) {
+          final SelectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
+          return CalendarView(initialDate: SelectedDate);
+        },
         '/day': (context) {
           final selectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
           return DayView(selectedDate: selectedDate);

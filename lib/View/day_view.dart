@@ -1,6 +1,9 @@
-import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:android2/theme/colors.dart';
+import 'package:android2/Model/day_model.dart';
+import 'package:android2/Controller/day_controller.dart';
 import 'feelings_view.dart';
+import 'package:android2/Controller/home_controller.dart';
 
 class DayView extends StatefulWidget {
   final DateTime selectedDate;
@@ -12,56 +15,46 @@ class DayView extends StatefulWidget {
 }
 
 class _DayViewState extends State<DayView> {
+  late final DayController _controller;
   final TextEditingController _muralController = TextEditingController();
-  String? _selectedFeeling;
-
-  static final Map<String, Map<String, String>> _savedData = {};
 
   @override
   void initState() {
     super.initState();
-    final key = _formatDate(widget.selectedDate);
-    if (_savedData.containsKey(key)) {
-      _muralController.text = _savedData[key]?['mural'] ?? '';
-      _selectedFeeling = _savedData[key]?['feeling'];
-    }
-  }
 
-  String _formatDate(DateTime date) {
-    return "${date.year}-${date.month}-${date.day}";
+    final day = DayModel(date: widget.selectedDate);
+    _controller = DayController(day: day);
   }
 
   void _salvar() {
-    final key = _formatDate(widget.selectedDate);
-    _savedData[key] = {
-      'mural': _muralController.text,
-      'feeling': _selectedFeeling ?? '',
-    };
+  _controller.updateNote(_muralController.text);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Salvo com sucesso!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  HomeController().adicionarDia(_controller.day);
 
-    Navigator.pop(context);
-  }
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Salvo com sucesso!')),
+  );
+
+  Navigator.pop(context);
+}
 
   void _escolherSentimento() async {
-    await Navigator.push(
+    final feeling = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         builder: (context) => FeelingsView(
           onFeelingSelected: (String feeling) {
-            setState(() {
-              _selectedFeeling = feeling;
-            });
-            Navigator.pop(context);
+            Navigator.pop(context, feeling);
           },
         ),
       ),
     );
+
+    if (feeling != null) {
+      setState(() {
+        _controller.setEmotion(feeling);
+      });
+    }
   }
 
   @override
@@ -81,7 +74,8 @@ class _DayViewState extends State<DayView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_selectedFeeling != null && _selectedFeeling!.isNotEmpty)
+            if (_controller.day.emotion != null &&
+                _controller.day.emotion!.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
@@ -90,7 +84,7 @@ class _DayViewState extends State<DayView> {
                 ),
                 child: Center(
                   child: Text(
-                    "Sentimento: $_selectedFeeling",
+                    "Sentimento: ${_controller.day.emotion}",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
