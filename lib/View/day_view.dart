@@ -22,21 +22,23 @@ class _DayViewState extends State<DayView> {
   void initState() {
     super.initState();
 
-    final day = DayModel(date: widget.selectedDate);
+    final daySalvo = HomeController().buscarDia(widget.selectedDate);
+    final day = daySalvo ?? DayModel(date: widget.selectedDate);
     _controller = DayController(day: day);
+
+    _muralController.text = _controller.day.note;
   }
 
   void _salvar() {
-  _controller.updateNote(_muralController.text);
+    _controller.updateNote(_muralController.text);
+    HomeController().adicionarDia(_controller.day);
 
-  HomeController().adicionarDia(_controller.day);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Salvo com sucesso!')),
+    );
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Salvo com sucesso!')),
-  );
-
-  Navigator.pop(context);
-}
+    Navigator.pop(context);
+  }
 
   void _escolherSentimento() async {
     final feeling = await Navigator.push<String>(
@@ -88,7 +90,7 @@ class _DayViewState extends State<DayView> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.blueLogo,
+                      color: Color.fromARGB(255, 0, 0, 0),
                     ),
                   ),
                 ),
@@ -124,7 +126,7 @@ class _DayViewState extends State<DayView> {
               onPressed: _escolherSentimento,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blankBackground,
-                foregroundColor: AppColors.blackBackground,
+                foregroundColor: AppColors.fontLogo,
                 side: const BorderSide(color: AppColors.blackBackground),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -138,7 +140,7 @@ class _DayViewState extends State<DayView> {
               onPressed: _salvar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blueLogo,
-                foregroundColor: AppColors.blankBackground,
+                foregroundColor: AppColors.fontLogo,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),

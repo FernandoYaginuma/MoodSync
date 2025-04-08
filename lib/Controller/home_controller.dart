@@ -32,14 +32,22 @@ class HomeController {
   }
 
   void adicionarDia(DayModel dia) {
-    final key = "${dia.date.year}-${dia.date.month.toString().padLeft(2, '0')}-${dia.date.day.toString().padLeft(2, '0')}";
+    final key = _gerarChave(dia.date);
     final novoMapa = Map<String, DayModel>.from(diasRegistrados.value);
     novoMapa[key] = dia;
     diasRegistrados.value = novoMapa;
   }
 
-  void logout(BuildContext context) {
-  Navigator.pushReplacementNamed(context, '/');
-}
+  DayModel? buscarDia(DateTime data) {
+    final key = _gerarChave(data);
+    return diasRegistrados.value[key];
+  }
 
+  String _gerarChave(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  void logout(BuildContext context) {
+    Navigator.pushReplacementNamed(context, '/');
+  }
 }

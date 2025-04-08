@@ -97,7 +97,7 @@ class _ProfessionalViewState extends State<ProfessionalView> {
               onPressed: _saveProfessionals,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blueLogo,
-                foregroundColor: AppColors.blankBackground,
+                foregroundColor: AppColors.fontLogo,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: const Text("Salvar"),

@@ -97,6 +97,7 @@ class _RegisterViewState extends State<RegisterView> {
                   onPressed: () => controller.cadastrar(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blueLogo,
+                    foregroundColor: const Color.fromRGBO(44, 62, 80, 1),
                   ),
                   child: const Text('Cadastrar', style: TextStyle(fontSize: 16)),
                 ),

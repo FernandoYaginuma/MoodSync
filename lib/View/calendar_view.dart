@@ -84,10 +84,10 @@ class _CalendarViewState extends State<CalendarView> {
                 onPressed: () {
                   Navigator.pushNamed(context, '/professional');
                 },
-                icon: const Icon(Icons.person_add_alt_1, color: AppColors.blueLogo),
+                icon: const Icon(Icons.person_add_alt_1, color: AppColors.fontLogo),
                 label: const Text(
                   "Adicionar profissional",
-                  style: TextStyle(color: AppColors.blueLogo),
+                  style: TextStyle(color: AppColors.fontLogo),
                 ),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

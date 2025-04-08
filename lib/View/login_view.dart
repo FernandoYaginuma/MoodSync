@@ -51,7 +51,7 @@ class LoginHomeView extends StatelessWidget {
                       onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
                       child: const Text(
                         'Esqueceu a senha?',
-                        style: TextStyle(color: AppColors.blueLogo),
+                        style: TextStyle(color: AppColors.fontLogo),
                       ),
                     ),
                   ),
@@ -60,7 +60,7 @@ class LoginHomeView extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () => controller.fazerLogin(context),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.blueLogo),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.blueLogo,foregroundColor: AppColors.fontLogo),
                       child: const Text('Entrar',
                       ),
                     ),

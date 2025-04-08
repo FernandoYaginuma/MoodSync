@@ -73,7 +73,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blueLogo,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.fontLogo,
                   ),
                   onPressed: validarEmail,
                   child: const Text(
@@ -115,7 +115,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blueLogo,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.fontLogo,
                   ),
                   onPressed: () => controller.redefinirSenha(context),
                   child: const Text(
