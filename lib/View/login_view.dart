@@ -26,13 +26,13 @@ class LoginHomeView extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
-                    controller: controller.usuarioOuEmailController,
+                    controller: controller.emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Usuário ou E-mail',
+                      labelText: 'E-mail',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) =>
-                        value == null || value.isEmpty ? 'Informe seu usuário ou e-mail' : null,
+                        value == null || value.isEmpty ? 'Informe seu e-mail' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -60,9 +60,10 @@ class LoginHomeView extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () => controller.fazerLogin(context),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.blueLogo,foregroundColor: AppColors.fontLogo),
-                      child: const Text('Entrar',
-                      ),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blueLogo,
+                          foregroundColor: AppColors.fontLogo),
+                      child: const Text('Entrar'),
                     ),
                   ),
                   const SizedBox(height: 8),

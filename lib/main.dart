@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:device_preview/device_preview.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'package:android2/View/calendar_view.dart';
 import 'package:android2/View/day_view.dart';
@@ -10,13 +11,12 @@ import 'package:android2/View/forgot_password_view.dart';
 import 'package:android2/View/about_view.dart';
 import 'package:android2/View/home_view.dart';
 
-void main() {
-  runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
-    ),
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -26,8 +26,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       title: 'MoodSync',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
@@ -40,11 +38,13 @@ class MyApp extends StatelessWidget {
         '/forgot-password': (context) => const ForgotPasswordView(),
         '/about': (context) => AboutView(),
         '/calendar': (context) {
-          final SelectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
+          final SelectedDate =
+              ModalRoute.of(context)!.settings.arguments as DateTime;
           return CalendarView(initialDate: SelectedDate);
         },
         '/day': (context) {
-          final selectedDate = ModalRoute.of(context)!.settings.arguments as DateTime;
+          final selectedDate =
+              ModalRoute.of(context)!.settings.arguments as DateTime;
           return DayView(selectedDate: selectedDate);
         },
         '/professional': (context) => const ProfessionalView(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterController {
   final formKey = GlobalKey<FormState>();
@@ -13,32 +14,48 @@ class RegisterController {
   Future<void> cadastrar(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
 
-    final nome = nomeController.text.trim();
-    final email = emailController.text.trim();
-    final telefone = telefoneController.text.trim();
-    final senha = senhaController.text;
-    final confirmarSenha = confirmarSenhaController.text;
+    try {
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text,
+      );
 
-    if (senha != confirmarSenha) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'nome': nomeController.text.trim(),
+        'email': emailController.text.trim(),
+        'telefone': telefoneController.text.trim(),
+      });
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('As senhas não coincidem')),
+          const SnackBar(content: Text('Cadastro realizado com sucesso!')),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensagemErro;
+      switch (e.code) {
+        case 'weak-password':
+          mensagemErro = 'A senha fornecida é muito fraca.';
+          break;
+        case 'email-already-in-use':
+          mensagemErro = 'Este e-mail já está em uso por outra conta.';
+          break;
+        case 'invalid-email':
+          mensagemErro = 'O formato do e-mail é inválido.';
+          break;
+        default:
+          mensagemErro = 'Ocorreu um erro desconhecido.';
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensagemErro)),
         );
       }
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('nome', nome);
-    await prefs.setString('email', email);
-    await prefs.setString('telefone', telefone);
-    await prefs.setString('senha', senha);
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cadastro realizado com sucesso!')),
-      );
-      Navigator.pushNamed(context, '/home');
     }
   }
 

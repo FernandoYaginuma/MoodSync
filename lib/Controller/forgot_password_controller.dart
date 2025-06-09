@@ -1,49 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordController {
   final emailController = TextEditingController();
-  final novaSenhaController = TextEditingController();
-  final confirmarSenhaController = TextEditingController();
 
-  Future<bool> verificarEmail(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    final emailSalvo = prefs.getString('email');
-    return emailSalvo == email;
-  }
-
-  Future<void> redefinirSenha(BuildContext context) async {
-    final novaSenha = novaSenhaController.text;
-    final confirmar = confirmarSenhaController.text;
-
-    if (novaSenha.length < 6) {
+  Future<void> enviarEmailRecuperacao(BuildContext context) async {
+    final email = emailController.text.trim();
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Senha muito curta (mín. 6 caracteres)')),
+        const SnackBar(content: Text('Por favor, digite seu e-mail.')),
       );
       return;
     }
 
-    if (novaSenha != confirmar) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('As senhas não coincidem')),
-      );
-      return;
-    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('senha', novaSenha);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Link para redefinição de senha enviado para o seu e-mail.')),
+        );
+        Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensagem = 'Ocorreu um erro. Tente novamente.';
+      if (e.code == 'user-not-found') {
+        // Por segurança, não informamos que o usuário não foi encontrado.
+        // A mensagem de sucesso é mostrada mesmo assim para evitar que alguém
+        // descubra quais e-mails estão ou não cadastrados.
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Link para redefinição de senha enviado para o seu e-mail.')),
+          );
+          Navigator.pop(context);
+        }
+        return;
+      } else if (e.code == 'invalid-email') {
+        mensagem = 'O formato do e-mail é inválido.';
+      }
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Senha alterada com sucesso!')),
-      );
-      Navigator.pop(context);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensagem)),
+        );
+      }
     }
   }
 
   void dispose() {
     emailController.dispose();
-    novaSenhaController.dispose();
-    confirmarSenhaController.dispose();
   }
 }

@@ -11,28 +11,11 @@ class ForgotPasswordView extends StatefulWidget {
 
 class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   final controller = ForgotPasswordController();
-  bool emailConfirmado = false;
 
   @override
   void dispose() {
     controller.dispose();
     super.dispose();
-  }
-
-  void validarEmail() async {
-    final email = controller.emailController.text.trim();
-    final existe = await controller.verificarEmail(email);
-
-    if (existe) {
-      setState(() {
-        emailConfirmado = true;
-      });
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('E-mail não encontrado')),
-      );
-    }
   }
 
   @override
@@ -41,7 +24,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
       backgroundColor: AppColors.blankBackground,
       appBar: AppBar(
         backgroundColor: AppColors.blueLogo,
-        foregroundColor: AppColors.blackBackground,
+        foregroundColor: AppColors.fontLogo,
         title: const Text('Recuperar Senha'),
       ),
       body: Padding(
@@ -49,82 +32,35 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!emailConfirmado) ...[
-              const Text(
-                'Digite seu e-mail para redefinir a senha:',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.blackBackground,
+            const Text(
+              'Digite seu e-mail para receber o link de redefinição:',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller.emailController,
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blueLogo,
+                  foregroundColor: AppColors.fontLogo,
+                ),
+                onPressed: () => controller.enviarEmailRecuperacao(context),
+                child: const Text(
+                  'Enviar E-mail de Recuperação',
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller.emailController,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.blueLogo,
-                    foregroundColor: AppColors.fontLogo,
-                  ),
-                  onPressed: validarEmail,
-                  child: const Text(
-                    'Confirmar',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ] else ...[
-              const Text(
-                'Digite sua nova senha:',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.blackBackground,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller.novaSenhaController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Nova Senha',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller.confirmarSenhaController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirmar Nova Senha',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.blueLogo,
-                    foregroundColor: AppColors.fontLogo,
-                  ),
-                  onPressed: () => controller.redefinirSenha(context),
-                  child: const Text(
-                    'Redefinir Senha',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ),

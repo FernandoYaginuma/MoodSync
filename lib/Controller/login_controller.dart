@@ -1,40 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginController {
   final formKey = GlobalKey<FormState>();
 
-  final usuarioOuEmailController = TextEditingController();
+  final emailController = TextEditingController();
   final senhaController = TextEditingController();
 
   Future<void> fazerLogin(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
 
-    final input = usuarioOuEmailController.text.trim();
-    final senhaDigitada = senhaController.text;
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text,
+      );
 
-    final prefs = await SharedPreferences.getInstance();
-    final emailSalvo = prefs.getString('email');
-    final usuarioSalvo = prefs.getString('nome');
-    final senhaSalva = prefs.getString('senha');
-
-    final loginCorreto = (input == emailSalvo || input == usuarioSalvo) && senhaDigitada == senhaSalva;
-
-    if (loginCorreto) {
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
-    } else {
+    } on FirebaseAuthException catch (e) {
+      String mensagemErro;
+      switch (e.code) {
+        case 'user-not-found':
+          mensagemErro = 'Nenhum usuário encontrado com este e-mail.';
+          break;
+        case 'wrong-password':
+          mensagemErro = 'Senha incorreta. Por favor, tente novamente.';
+          break;
+        case 'invalid-email':
+          mensagemErro = 'O formato do e-mail é inválido.';
+          break;
+        default:
+          mensagemErro = 'Ocorreu um erro. Tente novamente mais tarde.';
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuário ou senha inválidos')),
+          SnackBar(content: Text(mensagemErro)),
         );
       }
     }
   }
 
   void dispose() {
-    usuarioOuEmailController.dispose();
+    emailController.dispose();
     senhaController.dispose();
   }
 }

@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'moodsync-2828f.firebasestorage.app',
     measurementId: 'G-EMC55TKL00',
   );
+
 }
