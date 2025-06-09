@@ -39,7 +39,8 @@ class _RegisterViewState extends State<RegisterView> {
                   labelText: 'Nome',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Informe seu nome' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Informe seu nome' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -66,7 +67,7 @@ class _RegisterViewState extends State<RegisterView> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Informe seu telefone';
                   final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-                  return digitsOnly.length == 11 ? null : 'Telefone inválido';
+                  return digitsOnly.length >= 10 ? null : 'Telefone inválido';
                 },
               ),
               const SizedBox(height: 12),
@@ -77,7 +78,9 @@ class _RegisterViewState extends State<RegisterView> {
                   labelText: 'Senha',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.length < 6 ? 'Senha muito curta (mín. 6 caracteres)' : null,
+                validator: (value) => value == null || value.length < 6
+                    ? 'Senha muito curta (mín. 6 caracteres)'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -87,7 +90,10 @@ class _RegisterViewState extends State<RegisterView> {
                   labelText: 'Confirmar Senha',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value != controller.senhaController.text ? 'As senhas não coincidem' : null,
+                validator: (value) =>
+                    value != controller.senhaController.text
+                        ? 'As senhas não coincidem'
+                        : null,
               ),
               const SizedBox(height: 24),
               SizedBox(

@@ -12,7 +12,9 @@ class RegisterController {
   final confirmarSenhaController = TextEditingController();
 
   Future<void> cadastrar(BuildContext context) async {
-    if (!formKey.currentState!.validate()) return;
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
 
     try {
       final UserCredential userCredential =
@@ -28,13 +30,15 @@ class RegisterController {
         'nome': nomeController.text.trim(),
         'email': emailController.text.trim(),
         'telefone': telefoneController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Cadastro realizado com sucesso!')),
         );
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       String mensagemErro;
@@ -49,11 +53,17 @@ class RegisterController {
           mensagemErro = 'O formato do e-mail é inválido.';
           break;
         default:
-          mensagemErro = 'Ocorreu um erro desconhecido.';
+          mensagemErro = 'Ocorreu um erro de autenticação.';
       }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(mensagemErro)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar dados: $e')),
         );
       }
     }
