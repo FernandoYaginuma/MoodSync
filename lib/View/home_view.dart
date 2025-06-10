@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../Controller/home_controller.dart';
-import '../../Model/day_model.dart';
-import '../../theme/colors.dart';
+import 'package:android2/Controller/home_controller.dart';
+import 'package:android2/Model/day_model.dart';
+import 'package:android2/theme/colors.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -12,13 +12,12 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  final HomeController controller = HomeController();
+  final HomeController controller = HomeController.instance;
 
   @override
   void initState() {
     super.initState();
-    controller.carregarNome();
-    controller.carregarMockData();
+    controller.carregarDadosIniciais();
   }
 
   @override
@@ -28,7 +27,7 @@ class _HomeViewState extends State<HomeView> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.blueLogo,
-        foregroundColor: AppColors.blackBackground,
+        foregroundColor: AppColors.fontLogo,
         title: const Text('MoodSync'),
         actions: [
           IconButton(
@@ -60,24 +59,29 @@ class _HomeViewState extends State<HomeView> {
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: DateTime.now(),
+              calendarFormat: CalendarFormat.week,
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
               calendarStyle: const CalendarStyle(
                 todayDecoration: BoxDecoration(
                   color: AppColors.blueLogo,
                   shape: BoxShape.circle,
                 ),
-              ),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
+                selectedDecoration: BoxDecoration(
+                  color: AppColors.fontLogo,
+                  shape: BoxShape.circle,
+                ),
               ),
               onDaySelected: (selectedDay, focusedDay) {
-                Navigator.pushNamed(
-                  context,
-                  '/calendar',
-                  arguments: selectedDay,
-                );
+                final localDay =
+                    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+                Navigator.pushNamed(context, '/calendar', arguments: localDay)
+                    .then((_) {
+                  controller.carregarDadosIniciais();
+                });
               },
-              calendarFormat: CalendarFormat.week,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -93,7 +97,9 @@ class _HomeViewState extends State<HomeView> {
               valueListenable: controller.diasRegistrados,
               builder: (context, data, _) {
                 if (data.isEmpty) {
-                  return const Text('Nenhum registro encontrado.');
+                  return const Expanded(
+                    child: Center(child: Text('Nenhum registro encontrado.')),
+                  );
                 }
 
                 final diasOrdenados = data.values.toList()
@@ -110,9 +116,14 @@ class _HomeViewState extends State<HomeView> {
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         child: ListTile(
-                          leading: const Icon(Icons.emoji_emotions, color: AppColors.blueLogo),
-                          title: Text('Emoção: ${day.emotion}'),
-                          subtitle: Text(day.note),
+                          leading: const Icon(Icons.sentiment_very_satisfied,
+                              color: AppColors.blueLogo),
+                          title: Text(day.emotion ?? 'Sem sentimento'),
+                          subtitle: Text(
+                            day.note,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           trailing: Text(formattedDate),
                         ),
                       );

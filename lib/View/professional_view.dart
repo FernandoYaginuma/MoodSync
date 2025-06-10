@@ -1,5 +1,7 @@
-import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:android2/Controller/professional_controller.dart';
+import 'package:android2/Model/professional_model.dart';
+import 'package:android2/theme/colors.dart';
 
 class ProfessionalView extends StatefulWidget {
   const ProfessionalView({super.key});
@@ -9,101 +11,123 @@ class ProfessionalView extends StatefulWidget {
 }
 
 class _ProfessionalViewState extends State<ProfessionalView> {
-  final List<String> availableProfessionals = ['Fulano', 'Ciclano'];
-  final List<String> addedProfessionals = [];
-
-  static final List<String> _savedProfessionals = [];
+  final ProfessionalController _controller = ProfessionalController();
 
   @override
   void initState() {
     super.initState();
-    addedProfessionals.addAll(_savedProfessionals);
+    _controller.fetchData();
   }
 
-  void _addProfessional(String name) {
-    if (!addedProfessionals.contains(name)) {
-      setState(() {
-        addedProfessionals.add(name);
-      });
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$name adicionado com sucesso!')),
-      );
+  void _saveAndPop() async {
+    final success = await _controller.saveProfessionals();
+    if (mounted) {
+      final message = success
+          ? 'Profissionais salvos!'
+          : 'Erro ao salvar profissionais.';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+      if (success) {
+        Navigator.pop(context);
+      }
     }
-  }
-
-  void _removeProfessional(String name) {
-    setState(() {
-      addedProfessionals.remove(name);
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$name removido.')),
-    );
-  }
-
-  void _saveProfessionals() {
-    _savedProfessionals
-      ..clear()
-      ..addAll(addedProfessionals);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profissionais salvos!')),
-    );
-
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Adicionar Profissional')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              "Disponíveis para adicionar:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...availableProfessionals.map((name) => Card(
-                  child: ListTile(
-                    title: Text(name),
-                    trailing: ElevatedButton(
-                      onPressed: () => _addProfessional(name),
-                      child: const Text("Adicionar"),
-                    ),
+      body: ValueListenableBuilder<bool>(
+        valueListenable: _controller.isLoading,
+        builder: (context, isLoading, child) {
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    "Disponíveis para adicionar:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                )),
-            const SizedBox(height: 24),
-            const Text(
-              "Profissionais já adicionados:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...addedProfessionals.map((name) => Card(
-                  child: ListTile(
-                    title: Text(name),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeProfessional(name),
-                    ),
+                  const SizedBox(height: 8),
+                  ValueListenableBuilder<List<ProfessionalModel>>(
+                    valueListenable: _controller.availableProfessionals,
+                    builder: (context, available, _) {
+                      return Column(
+                        children: available.map((professional) {
+                          return Card(
+                            child: ListTile(
+                              title: Text(professional.name),
+                              subtitle: Text(professional.specialty),
+                              trailing: ElevatedButton(
+                                onPressed: () =>
+                                    _controller.addProfessional(professional),
+                                child: const Text("Adicionar"),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
-                )),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveProfessionals,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blueLogo,
-                foregroundColor: AppColors.fontLogo,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Profissionais já adicionados:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ValueListenableBuilder<List<ProfessionalModel>>(
+                    valueListenable: _controller.addedProfessionals,
+                    builder: (context, added, _) {
+                      if (added.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Center(
+                              child: Text("Nenhum profissional adicionado.")),
+                        );
+                      }
+                      return Column(
+                        children: added.map((professional) {
+                          return Card(
+                            child: ListTile(
+                              title: Text(professional.name),
+                              subtitle: Text(professional.specialty),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () =>
+                                    _controller.removeProfessional(professional),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _saveAndPop,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blueLogo,
+                      foregroundColor: AppColors.fontLogo,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text("Salvar e Voltar"),
+                  ),
+                ],
               ),
-              child: const Text("Salvar"),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

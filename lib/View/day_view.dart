@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/Model/day_model.dart';
 import 'package:android2/Controller/day_controller.dart';
 import 'feelings_view.dart';
-import 'package:android2/Controller/home_controller.dart';
 
 class DayView extends StatefulWidget {
   final DateTime selectedDate;
@@ -15,29 +16,105 @@ class DayView extends StatefulWidget {
 }
 
 class _DayViewState extends State<DayView> {
-  late final DayController _controller;
-  final TextEditingController _muralController = TextEditingController();
+  late final Future<DayModel> _dayDataFuture;
 
   @override
   void initState() {
     super.initState();
-
-    final daySalvo = HomeController().buscarDia(widget.selectedDate);
-    final day = daySalvo ?? DayModel(date: widget.selectedDate);
-    _controller = DayController(day: day);
-
-    _muralController.text = _controller.day.note;
+    _dayDataFuture = _fetchDayData();
   }
 
-  void _salvar() {
-    _controller.updateNote(_muralController.text);
-    HomeController().adicionarDia(_controller.day);
+  Future<DayModel> _fetchDayData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return DayModel(date: widget.selectedDate);
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Salvo com sucesso!')),
+    final docId = DayModel(date: widget.selectedDate).formattedDate;
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('moodEntries')
+        .doc(docId);
+
+    final docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      return DayModel.fromJson(docSnapshot.data()!);
+    } else {
+      return DayModel(date: widget.selectedDate);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DayModel>(
+      future: _dayDataFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Carregando...")),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Erro")),
+            body: const Center(child: Text("Não foi possível carregar os dados.")),
+          );
+        }
+
+        final initialDay = snapshot.data!;
+        return DayViewContent(initialDay: initialDay);
+      },
     );
+  }
+}
 
-    Navigator.pop(context);
+class DayViewContent extends StatefulWidget {
+  final DayModel initialDay;
+
+  const DayViewContent({super.key, required this.initialDay});
+
+  @override
+  State<DayViewContent> createState() => _DayViewContentState();
+}
+
+class _DayViewContentState extends State<DayViewContent> {
+  late final DayController _controller;
+  late final TextEditingController _muralController;
+
+  void _rebuildOnNotify() {
+    if(mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = DayController(day: widget.initialDay);
+    _muralController = TextEditingController(text: widget.initialDay.note);
+    _controller.addListener(_rebuildOnNotify);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_rebuildOnNotify);
+    _controller.dispose();
+    _muralController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _salvar() async {
+    await _controller.salvar(_muralController.text);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Salvo com sucesso!')),
+      );
+      Navigator.pop(context);
+    }
   }
 
   void _escolherSentimento() async {
@@ -53,101 +130,115 @@ class _DayViewState extends State<DayView> {
     );
 
     if (feeling != null) {
-      setState(() {
-        _controller.setEmotion(feeling);
-      });
+      _controller.setEmotion(feeling);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final dateFormatted =
-        "${widget.selectedDate.day.toString().padLeft(2, '0')}/${widget.selectedDate.month.toString().padLeft(2, '0')}/${widget.selectedDate.year}";
+        "${widget.initialDay.date.day.toString().padLeft(2, '0')}/${widget.initialDay.date.month.toString().padLeft(2, '0')}/${widget.initialDay.date.year}";
 
-    return Scaffold(
-      backgroundColor: AppColors.blankBackground,
-      appBar: AppBar(
-        title: Text('Dia $dateFormatted'),
-        backgroundColor: AppColors.blueLogo,
-        foregroundColor: AppColors.blackBackground,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AbsorbPointer(
+      absorbing: _controller.isLoading,
+      child: Scaffold(
+        backgroundColor: AppColors.blankBackground,
+        appBar: AppBar(
+          title: Text('Dia $dateFormatted'),
+          backgroundColor: AppColors.blueLogo,
+          foregroundColor: AppColors.blackBackground,
+        ),
+        body: Stack(
           children: [
-            if (_controller.day.emotion != null &&
-                _controller.day.emotion!.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.blueLogo.withAlpha(25),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    "Sentimento: ${_controller.day.emotion}",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 0, 0, 0),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_controller.day.emotion != null &&
+                      _controller.day.emotion!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.blueLogo.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Sentimento: ${_controller.day.emotion}",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Descreva seu dia:",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.blackBackground,
                     ),
                   ),
-                ),
-              ),
-            const SizedBox(height: 16),
-            const Text(
-              "Descreva seu dia:",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppColors.blackBackground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 150,
-              child: TextField(
-                controller: _muralController,
-                maxLines: null,
-                expands: true,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.blueLogo),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 150,
+                    child: TextField(
+                      controller: _muralController,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: AppColors.blueLogo),
+                        ),
+                        hintText: 'Escreva aqui...',
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
                   ),
-                  hintText: 'Escreva aqui...',
-                  contentPadding: const EdgeInsets.all(12),
-                ),
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: _escolherSentimento,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blankBackground,
+                      foregroundColor: AppColors.fontLogo,
+                      side: const BorderSide(color: AppColors.blackBackground),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text("Escolher sentimento"),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _salvar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blueLogo,
+                      foregroundColor: AppColors.fontLogo,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text("Salvar"),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _escolherSentimento,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blankBackground,
-                foregroundColor: AppColors.fontLogo,
-                side: const BorderSide(color: AppColors.blackBackground),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+            if (_controller.isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text("Escolher sentimento"),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _salvar,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blueLogo,
-                foregroundColor: AppColors.fontLogo,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text("Salvar"),
-            ),
           ],
         ),
       ),

@@ -1,17 +1,19 @@
 class ProfessionalModel {
-  final List<String> availableProfessionals = ['Fulano', 'Ciclano'];
-  final List<String> addedProfessionals = [];
+  final String id;
+  final String name;
+  final String specialty;
 
-  static final List<String> savedProfessionals = [];
+  ProfessionalModel({
+    required this.id,
+    required this.name,
+    required this.specialty,
+  });
 
-  void loadSavedProfessionals() {
-    addedProfessionals.clear();
-    addedProfessionals.addAll(savedProfessionals);
-  }
-
-  void saveProfessionals() {
-    savedProfessionals
-      ..clear()
-      ..addAll(addedProfessionals);
+  factory ProfessionalModel.fromJson(String id, Map<String, dynamic> json) {
+    return ProfessionalModel(
+      id: id,
+      name: json['name'] ?? '',
+      specialty: json['specialty'] ?? '',
+    );
   }
 }

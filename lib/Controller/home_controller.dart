@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../Model/day_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:android2/Model/day_model.dart';
 
 class HomeController {
   static final HomeController instance = HomeController._internal();
@@ -8,46 +9,37 @@ class HomeController {
   factory HomeController() => instance;
 
   final ValueNotifier<String> nomeUsuario = ValueNotifier('Usuário');
-  final ValueNotifier<Map<String, DayModel>> diasRegistrados = ValueNotifier({});
+  final ValueNotifier<Map<String, DayModel>> diasRegistrados =
+      ValueNotifier({});
 
-  Future<void> carregarNome() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nome = prefs.getString('nome') ?? 'Usuário';
-    nomeUsuario.value = nome;
+  Future<void> carregarDadosIniciais() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (userDoc.exists && userDoc.data()!.containsKey('nome')) {
+      nomeUsuario.value = userDoc.data()!['nome'];
+    }
+
+    final moodEntriesSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('moodEntries')
+        .get();
+
+    final Map<String, DayModel> loadedDays = {};
+    for (var doc in moodEntriesSnapshot.docs) {
+      final day = DayModel.fromJson(doc.data());
+      loadedDays[day.formattedDate] = day;
+    }
+    diasRegistrados.value = loadedDays;
   }
 
-  void carregarMockData() {
-    diasRegistrados.value = {
-      '2025-04-06': DayModel(
-        date: DateTime(2025, 4, 6),
-        emotion: 'Feliz',
-        note: 'Dia produtivo e animado!',
-      ),
-      '2025-04-05': DayModel(
-        date: DateTime(2025, 4, 5),
-        emotion: 'Cansado',
-        note: 'Trabalhei muito, estou exausto.',
-      ),
-    };
-  }
-
-  void adicionarDia(DayModel dia) {
-    final key = _gerarChave(dia.date);
-    final novoMapa = Map<String, DayModel>.from(diasRegistrados.value);
-    novoMapa[key] = dia;
-    diasRegistrados.value = novoMapa;
-  }
-
-  DayModel? buscarDia(DateTime data) {
-    final key = _gerarChave(data);
-    return diasRegistrados.value[key];
-  }
-
-  String _gerarChave(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-  }
-
-  void logout(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/');
+  Future<void> logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    }
   }
 }
