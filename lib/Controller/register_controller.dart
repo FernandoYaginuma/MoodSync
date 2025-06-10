@@ -4,70 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterController {
   final formKey = GlobalKey<FormState>();
-
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
   final telefoneController = TextEditingController();
   final senhaController = TextEditingController();
   final confirmarSenhaController = TextEditingController();
+  final dataNascimentoController = TextEditingController();
 
-  Future<void> cadastrar(BuildContext context) async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
-
-    try {
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: senhaController.text,
-      );
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-        'nome': nomeController.text.trim(),
-        'email': emailController.text.trim(),
-        'telefone': telefoneController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cadastro realizado com sucesso!')),
-        );
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/home', (route) => false);
-      }
-    } on FirebaseAuthException catch (e) {
-      String mensagemErro;
-      switch (e.code) {
-        case 'weak-password':
-          mensagemErro = 'A senha fornecida é muito fraca.';
-          break;
-        case 'email-already-in-use':
-          mensagemErro = 'Este e-mail já está em uso por outra conta.';
-          break;
-        case 'invalid-email':
-          mensagemErro = 'O formato do e-mail é inválido.';
-          break;
-        default:
-          mensagemErro = 'Ocorreu um erro de autenticação.';
-      }
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensagemErro)),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar dados: $e')),
-        );
-      }
-    }
-  }
+  DateTime? dataNascimentoSelecionada;
+  String? sexoSelecionado;
 
   void dispose() {
     nomeController.dispose();
@@ -75,5 +20,56 @@ class RegisterController {
     telefoneController.dispose();
     senhaController.dispose();
     confirmarSenhaController.dispose();
+    dataNascimentoController.dispose();
+  }
+
+  Future<void> cadastrar(BuildContext context) async {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: senhaController.text.trim(),
+      );
+
+      final user = credential.user;
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'nome': nomeController.text.trim(),
+          'email': emailController.text.trim(),
+          'telefone': telefoneController.text.trim(),
+          'dataNascimento': dataNascimentoSelecionada != null
+              ? Timestamp.fromDate(dataNascimentoSelecionada!)
+              : null,
+          'sexo': sexoSelecionado,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cadastro realizado com sucesso!')),
+        );
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'weak-password') {
+        message = 'A senha fornecida é muito fraca.';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'O e-mail fornecido já está em uso.';
+      } else {
+        message = 'Ocorreu um erro. Tente novamente.';
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    }
   }
 }

@@ -61,9 +61,15 @@ class _CalendarViewState extends State<CalendarView> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ValueListenableBuilder<Map<String, DayModel>>(
-          valueListenable: _homeController.diasRegistrados,
-          builder: (context, dias, _) {
+        child: StreamBuilder<Map<String, DayModel>>(
+          stream: _homeController.getRegistrosStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final dias = snapshot.data ?? {};
+
             return ValueListenableBuilder<DateTime?>(
               valueListenable: _calendarController.selectedDay,
               builder: (context, selectedDay, _) {
@@ -103,7 +109,7 @@ class _CalendarViewState extends State<CalendarView> {
                               "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
                           final dayModel = dias[key];
 
-                          if (dayModel != null) {
+                          if (dayModel != null && dayModel.emotion != null) {
                             return Container(
                               margin: const EdgeInsets.all(4.0),
                               decoration: BoxDecoration(

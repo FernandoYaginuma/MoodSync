@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:android2/Controller/home_controller.dart';
 
 class CalendarController {
   late final ValueNotifier<DateTime> focusedDay;
   late final ValueNotifier<DateTime?> selectedDay;
-
-  final HomeController _homeController = HomeController.instance;
 
   CalendarController({required DateTime initialDate}) {
     focusedDay = ValueNotifier(initialDate);
@@ -20,9 +17,7 @@ class CalendarController {
     selectedDay.value = localDay;
     focusedDay.value = newFocusedDay;
 
-    Navigator.pushNamed(context, '/day', arguments: localDay).then((_) {
-      _homeController.carregarDadosIniciais();
-    });
+    Navigator.pushNamed(context, '/day', arguments: localDay);
   }
 
   void onPageChanged(DateTime newFocusedDay) {

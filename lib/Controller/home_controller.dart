@@ -9,10 +9,8 @@ class HomeController {
   factory HomeController() => instance;
 
   final ValueNotifier<String> nomeUsuario = ValueNotifier('Usuário');
-  final ValueNotifier<Map<String, DayModel>> diasRegistrados =
-      ValueNotifier({});
 
-  Future<void> carregarDadosIniciais() async {
+  Future<void> carregarDadosUsuario() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -21,19 +19,28 @@ class HomeController {
     if (userDoc.exists && userDoc.data()!.containsKey('nome')) {
       nomeUsuario.value = userDoc.data()!['nome'];
     }
+  }
 
-    final moodEntriesSnapshot = await FirebaseFirestore.instance
+  Stream<Map<String, DayModel>> getRegistrosStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Stream.value({});
+    }
+
+    final snapshots = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('moodEntries')
-        .get();
+        .snapshots();
 
-    final Map<String, DayModel> loadedDays = {};
-    for (var doc in moodEntriesSnapshot.docs) {
-      final day = DayModel.fromJson(doc.data());
-      loadedDays[day.formattedDate] = day;
-    }
-    diasRegistrados.value = loadedDays;
+    return snapshots.map((querySnapshot) {
+      final Map<String, DayModel> days = {};
+      for (var doc in querySnapshot.docs) {
+        final day = DayModel.fromJson(doc.data());
+        days[day.formattedDate] = day;
+      }
+      return days;
+    });
   }
 
   Future<void> logout(BuildContext context) async {
