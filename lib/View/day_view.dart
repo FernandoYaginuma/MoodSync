@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/Model/day_model.dart';
+import 'package:android2/Model/activity_model.dart';
 import 'package:android2/Controller/day_controller.dart';
 import 'feelings_view.dart';
 
@@ -16,40 +17,48 @@ class DayView extends StatefulWidget {
 }
 
 class _DayViewState extends State<DayView> {
-  late final Future<DayModel> _dayDataFuture;
+  late final Future<Map<String, dynamic>> _initialDataFuture;
 
   @override
   void initState() {
     super.initState();
-    _dayDataFuture = _fetchDayData();
+    _initialDataFuture = _fetchInitialData();
   }
 
-  Future<DayModel> _fetchDayData() async {
+  Future<Map<String, dynamic>> _fetchInitialData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return DayModel(date: widget.selectedDate);
-    }
+    DayModel dayModel;
 
-    final docId = DayModel(date: widget.selectedDate).formattedDate;
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('moodEntries')
-        .doc(docId);
-
-    final docSnapshot = await docRef.get();
-
-    if (docSnapshot.exists) {
-      return DayModel.fromJson(docSnapshot.data()!);
+    if (user != null) {
+      final docId = DayModel(date: widget.selectedDate).formattedDate;
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('moodEntries')
+          .doc(docId);
+      final docSnapshot = await docRef.get();
+      if (docSnapshot.exists) {
+        dayModel = DayModel.fromJson(docSnapshot.data()!);
+      } else {
+        dayModel = DayModel(date: widget.selectedDate);
+      }
     } else {
-      return DayModel(date: widget.selectedDate);
+      dayModel = DayModel(date: widget.selectedDate);
     }
+
+    final activitiesSnapshot =
+        await FirebaseFirestore.instance.collection('activities').get();
+    final activities = activitiesSnapshot.docs
+        .map((doc) => ActivityModel.fromFirestore(doc.data(), doc.id))
+        .toList();
+
+    return {'dayModel': dayModel, 'activities': activities};
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<DayModel>(
-      future: _dayDataFuture,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _initialDataFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -61,12 +70,19 @@ class _DayViewState extends State<DayView> {
         if (snapshot.hasError || !snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(title: const Text("Erro")),
-            body: const Center(child: Text("Não foi possível carregar os dados.")),
+            body:
+                const Center(child: Text("Não foi possível carregar os dados.")),
           );
         }
 
-        final initialDay = snapshot.data!;
-        return DayViewContent(initialDay: initialDay);
+        final DayModel initialDay = snapshot.data!['dayModel'];
+        final List<ActivityModel> availableActivities =
+            snapshot.data!['activities'];
+
+        return DayViewContent(
+          initialDay: initialDay,
+          availableActivities: availableActivities,
+        );
       },
     );
   }
@@ -74,8 +90,13 @@ class _DayViewState extends State<DayView> {
 
 class DayViewContent extends StatefulWidget {
   final DayModel initialDay;
+  final List<ActivityModel> availableActivities;
 
-  const DayViewContent({super.key, required this.initialDay});
+  const DayViewContent({
+    super.key,
+    required this.initialDay,
+    required this.availableActivities,
+  });
 
   @override
   State<DayViewContent> createState() => _DayViewContentState();
@@ -85,8 +106,17 @@ class _DayViewContentState extends State<DayViewContent> {
   late final DayController _controller;
   late final TextEditingController _muralController;
 
+  final Map<String, IconData> _iconMap = {
+    'fitness_center': Icons.fitness_center,
+    'self_improvement': Icons.self_improvement,
+    'people': Icons.people,
+    'work': Icons.work,
+    'palette': Icons.palette,
+    'circle': Icons.circle,
+  };
+
   void _rebuildOnNotify() {
-    if(mounted) {
+    if (mounted) {
       setState(() {});
     }
   }
@@ -152,84 +182,85 @@ class _DayViewContentState extends State<DayViewContent> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_controller.day.emotion != null &&
-                      _controller.day.emotion!.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.blueLogo.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          "Sentimento: ${_controller.day.emotion}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 0, 0, 0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_controller.day.emotion != null &&
+                        _controller.day.emotion!.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.blueLogo.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Sentimento: ${_controller.day.emotion}",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
+                    const SizedBox(height: 16),
+                    const Text("Atividades do Dia:",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
+                      children: widget.availableActivities.map((activity) {
+                        final isSelected =
+                            _controller.day.activityIds.contains(activity.id);
+                        return ChoiceChip(
+                          label: Text(activity.name),
+                          avatar: Icon(
+                              _iconMap[activity.iconName] ?? Icons.circle,
+                              color:
+                                  isSelected ? Colors.white : Colors.black54),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            _controller.toggleActivity(activity.id);
+                          },
+                          selectedColor: AppColors.blueLogo,
+                          labelStyle: TextStyle(
+                              color:
+                                  isSelected ? Colors.white : Colors.black),
+                        );
+                      }).toList(),
                     ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Descreva seu dia:",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.blackBackground,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 150,
-                    child: TextField(
+                    const SizedBox(height: 16),
+                    const Text("Descreva seu dia:",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    TextField(
                       controller: _muralController,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.blueLogo),
-                        ),
+                      maxLines: 5,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
                         hintText: 'Escreva aqui...',
-                        contentPadding: const EdgeInsets.all(12),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: _escolherSentimento,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.blankBackground,
-                      foregroundColor: AppColors.fontLogo,
-                      side: const BorderSide(color: AppColors.blackBackground),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _escolherSentimento,
+                      child: const Text("Escolher sentimento"),
                     ),
-                    child: const Text("Escolher sentimento"),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _salvar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.blueLogo,
-                      foregroundColor: AppColors.fontLogo,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _salvar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blueLogo,
+                        foregroundColor: AppColors.fontLogo,
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: const Text("Salvar"),
                     ),
-                    child: const Text("Salvar"),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (_controller.isLoading)

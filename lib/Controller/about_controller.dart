@@ -1,4 +1,6 @@
 class AboutController {
+  String get tema =>
+      'Saude mental';
   String get objetivo =>
       'O MoodSync tem como objetivo auxiliar pacientes e profissionais da saúde mental no acompanhamento emocional diário, promovendo o bem-estar e conectando mentes.';
 

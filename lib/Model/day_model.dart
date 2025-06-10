@@ -4,18 +4,26 @@ class DayModel {
   final DateTime date;
   String note;
   String? emotion;
+  String? professionalId;
+  final DateTime? lastUpdatedAt;
+  List<String> activityIds;
 
   DayModel({
     required this.date,
     this.note = '',
     this.emotion,
-  });
+    this.professionalId,
+    this.lastUpdatedAt,
+    List<String>? activityIds,
+  }) : activityIds = activityIds ?? [];
 
   Map<String, dynamic> toJson() {
     return {
       'date': Timestamp.fromDate(date),
       'note': note,
       'emotion': emotion,
+      'professionalId': professionalId,
+      'activityIds': activityIds,
     };
   }
 
@@ -24,6 +32,9 @@ class DayModel {
       date: (json['date'] as Timestamp).toDate(),
       note: json['note'] ?? '',
       emotion: json['emotion'],
+      professionalId: json['professionalId'],
+      lastUpdatedAt: (json['lastUpdatedAt'] as Timestamp?)?.toDate(),
+      activityIds: List<String>.from(json['activityIds'] ?? []),
     );
   }
 

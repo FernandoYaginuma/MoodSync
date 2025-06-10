@@ -14,6 +14,15 @@ class DayController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleActivity(String activityId) {
+    if (day.activityIds.contains(activityId)) {
+      day.activityIds.remove(activityId);
+    } else {
+      day.activityIds.add(activityId);
+    }
+    notifyListeners();
+  }
+
   Future<void> salvar(String note) async {
     isLoading = true;
     notifyListeners();
@@ -34,7 +43,10 @@ class DayController extends ChangeNotifier {
         .collection('moodEntries')
         .doc(docId);
 
-    await docRef.set(day.toJson(), SetOptions(merge: true));
+    final dataToSave = day.toJson();
+    dataToSave['lastUpdatedAt'] = FieldValue.serverTimestamp();
+
+    await docRef.set(dataToSave, SetOptions(merge: true));
 
     isLoading = false;
     notifyListeners();
