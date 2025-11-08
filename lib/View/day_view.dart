@@ -47,7 +47,7 @@ class _DayViewState extends State<DayView> {
     }
 
     final activitiesSnapshot =
-        await FirebaseFirestore.instance.collection('activities').get();
+    await FirebaseFirestore.instance.collection('activities').get();
     final activities = activitiesSnapshot.docs
         .map((doc) => ActivityModel.fromFirestore(doc.data(), doc.id))
         .toList();
@@ -71,13 +71,13 @@ class _DayViewState extends State<DayView> {
           return Scaffold(
             appBar: AppBar(title: const Text("Erro")),
             body:
-                const Center(child: Text("Não foi possível carregar os dados.")),
+            const Center(child: Text("Não foi possível carregar os dados.")),
           );
         }
 
         final DayModel initialDay = snapshot.data!['dayModel'];
         final List<ActivityModel> availableActivities =
-            snapshot.data!['activities'];
+        snapshot.data!['activities'];
 
         return DayViewContent(
           initialDay: initialDay,
@@ -116,9 +116,7 @@ class _DayViewContentState extends State<DayViewContent> {
   };
 
   void _rebuildOnNotify() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -172,16 +170,53 @@ class _DayViewContentState extends State<DayViewContent> {
     return AbsorbPointer(
       absorbing: _controller.isLoading,
       child: Scaffold(
-        backgroundColor: AppColors.blankBackground,
         appBar: AppBar(
-          title: Text('Dia $dateFormatted'),
-          backgroundColor: AppColors.blueLogo,
-          foregroundColor: AppColors.blackBackground,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFB3E5FC), Color(0xFFE1F5FE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          title: Text("Dia $dateFormatted"),
+          centerTitle: true,
+          foregroundColor: AppColors.fontLogo,
+          backgroundColor: Colors.transparent,
         ),
         body: Stack(
           children: [
+            // Fundo com bolhas suaves
+            Positioned(
+              top: -50,
+              left: -30,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: AppColors.blueLogo.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -80,
+              right: -40,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: AppColors.blueLogo.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            // Conteúdo principal
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -189,10 +224,10 @@ class _DayViewContentState extends State<DayViewContent> {
                     if (_controller.day.emotion != null &&
                         _controller.day.emotion!.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.blueLogo.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.blueLogo.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
                           child: Text(
@@ -204,60 +239,102 @@ class _DayViewContentState extends State<DayViewContent> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 16),
-                    const Text("Atividades do Dia:",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Atividades do Dia:",
+                      style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 8.0,
                       runSpacing: 4.0,
                       children: widget.availableActivities.map((activity) {
                         final isSelected =
-                            _controller.day.activityIds.contains(activity.id);
+                        _controller.day.activityIds.contains(activity.id);
                         return ChoiceChip(
                           label: Text(activity.name),
                           avatar: Icon(
-                              _iconMap[activity.iconName] ?? Icons.circle,
-                              color:
-                                  isSelected ? Colors.white : Colors.black54),
+                            _iconMap[activity.iconName] ?? Icons.circle,
+                            color:
+                            isSelected ? Colors.white : Colors.black54,
+                          ),
                           selected: isSelected,
                           onSelected: (selected) {
                             _controller.toggleActivity(activity.id);
                           },
                           selectedColor: AppColors.blueLogo,
                           labelStyle: TextStyle(
-                              color:
-                                  isSelected ? Colors.white : Colors.black),
+                            color:
+                            isSelected ? Colors.white : Colors.black,
+                          ),
+                          backgroundColor: Colors.white,
+                          side: BorderSide(
+                            color: AppColors.blueLogo.withOpacity(0.3),
+                          ),
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 16),
-                    const Text("Descreva seu dia:",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _muralController,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Escreva aqui...',
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Descreva seu dia:",
+                      style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _muralController,
+                        maxLines: 5,
+                        decoration: const InputDecoration(
+                          hintText: 'Escreva aqui...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _escolherSentimento,
-                      child: const Text("Escolher sentimento"),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _salvar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.blueLogo,
-                        foregroundColor: AppColors.fontLogo,
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 45,
+                      child: ElevatedButton.icon(
+                        onPressed: _escolherSentimento,
+                        icon: const Icon(Icons.mood),
+                        label: const Text("Escolher sentimento"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.fontLogo.withOpacity(0.1),
+                          foregroundColor: AppColors.fontLogo,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
-                      child: const Text("Salvar"),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: _salvar,
+                        icon: const Icon(Icons.save),
+                        label: const Text("Salvar"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blueLogo,
+                          foregroundColor: AppColors.fontLogo,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -265,7 +342,7 @@ class _DayViewContentState extends State<DayViewContent> {
             ),
             if (_controller.isLoading)
               Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withOpacity(0.4),
                 child: const Center(
                   child: CircularProgressIndicator(),
                 ),

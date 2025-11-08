@@ -37,143 +37,187 @@ class _HomeViewState extends State<HomeView> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.blueLogo.withOpacity(0.2),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            ValueListenableBuilder<String>(
-              valueListenable: controller.nomeUsuario,
-              builder: (context, nome, _) {
-                return Text(
-                  'Olá, $nome!',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.blackBackground,
-                  ),
-                );
-              },
+            // bolhas decorativas
+            Positioned(
+              top: -50,
+              left: -80,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: AppColors.blueLogo.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<Map<String, DayModel>>(
-                stream: controller.getRegistrosStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+            Positioned(
+              bottom: -60,
+              right: -40,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  color: AppColors.blueLogo.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
 
-                  if (snapshot.hasError) {
-                    return const Center(
-                        child: Text("Erro ao carregar registros."));
-                  }
-
-                  final data = snapshot.data ?? {};
-
-                  final diasOrdenados = data.values.toList()
-                    ..sort((a, b) => b.date.compareTo(a.date));
-
-                  return Column(
-                    children: [
-                      TableCalendar(
-                        firstDay: DateTime.utc(2020, 1, 1),
-                        lastDay: DateTime.utc(2030, 12, 31),
-                        focusedDay: _focusedDay,
-                        calendarFormat: CalendarFormat.week,
-                        headerStyle: const HeaderStyle(
-                          formatButtonVisible: false,
-                          titleCentered: true,
-                        ),
-                        calendarStyle: const CalendarStyle(
-                          todayDecoration: BoxDecoration(
-                            color: AppColors.blueLogo,
-                            shape: BoxShape.circle,
-                          ),
-                          selectedDecoration: BoxDecoration(
-                            color: AppColors.fontLogo,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        onDaySelected: (selectedDay, focusedDay) {
-                          final localDay = DateTime(selectedDay.year,
-                              selectedDay.month, selectedDay.day);
-                          Navigator.pushNamed(context, '/calendar',
-                              arguments: localDay);
-                        },
-                        onPageChanged: (focusedDay) {
-                          setState(() {
-                            _focusedDay = focusedDay;
-                          });
-                        },
-                        eventLoader: (day) {
-                          final key =
-                              "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-                          return data.containsKey(key) ? [data[key]] : [];
-                        },
-                        calendarBuilders: CalendarBuilders(
-                          markerBuilder: (context, date, events) {
-                            if (events.isNotEmpty) {
-                              return Positioned(
-                                right: 1,
-                                bottom: 1,
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.blueLogo,
-                                  ),
-                                  width: 7.0,
-                                  height: 7.0,
-                                ),
-                              );
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Registros Recentes:',
-                        style: TextStyle(
-                          fontSize: 18,
+            // conteúdo principal
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ValueListenableBuilder<String>(
+                    valueListenable: controller.nomeUsuario,
+                    builder: (context, nome, _) {
+                      return Text(
+                        'Olá, $nome!',
+                        style: const TextStyle(
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: AppColors.blackBackground,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (diasOrdenados.isEmpty)
-                        const Center(child: Text('Nenhum registro encontrado.'))
-                      else
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: diasOrdenados.length,
-                            itemBuilder: (context, index) {
-                              final day = diasOrdenados[index];
-                              final formattedDate =
-                                  "${day.date.day.toString().padLeft(2, '0')}/${day.date.month.toString().padLeft(2, '0')}/${day.date.year}";
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Como você está hoje?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-                              return Card(
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 6),
-                                child: ListTile(
-                                  leading: const Icon(
-                                      Icons.sentiment_very_satisfied,
-                                      color: AppColors.blueLogo),
-                                  title: Text(day.emotion ?? 'Sem sentimento'),
-                                  subtitle: Text(
-                                    day.note,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  trailing: Text(formattedDate),
-                                ),
-                              );
-                            },
-                          ),
+                  // Card do calendário
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                    ],
-                  );
-                },
+                      ],
+                    ),
+                    child: TableCalendar(
+                      firstDay: DateTime.utc(2020, 1, 1),
+                      lastDay: DateTime.utc(2030, 12, 31),
+                      focusedDay: _focusedDay,
+                      calendarFormat: CalendarFormat.week,
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                      ),
+                      calendarStyle: const CalendarStyle(
+                        todayDecoration: BoxDecoration(
+                          color: AppColors.blueLogo,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        Navigator.pushNamed(context, '/calendar',
+                            arguments: selectedDay);
+                      },
+                      onPageChanged: (focusedDay) {
+                        setState(() {
+                          _focusedDay = focusedDay;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'Registros Recentes:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blackBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Lista de registros
+                  Expanded(
+                    child: StreamBuilder<Map<String, DayModel>>(
+                      stream: controller.getRegistrosStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+
+                        if (snapshot.hasError) {
+                          return const Center(
+                              child: Text("Erro ao carregar registros."));
+                        }
+
+                        final data = snapshot.data ?? {};
+                        final diasOrdenados = data.values.toList()
+                          ..sort((a, b) => b.date.compareTo(a.date));
+
+                        if (diasOrdenados.isEmpty) {
+                          return const Center(
+                              child: Text('Nenhum registro encontrado.'));
+                        }
+
+                        return ListView.builder(
+                          itemCount: diasOrdenados.length,
+                          itemBuilder: (context, index) {
+                            final day = diasOrdenados[index];
+                            final formattedDate =
+                                "${day.date.day.toString().padLeft(2, '0')}/${day.date.month.toString().padLeft(2, '0')}/${day.date.year}";
+
+                            return Card(
+                              color: Colors.white.withOpacity(0.95),
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              margin:
+                              const EdgeInsets.symmetric(vertical: 6),
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.sentiment_satisfied_alt_outlined,
+                                  color: AppColors.blueLogo,
+                                ),
+                                title:
+                                Text(day.emotion ?? 'Sem sentimento'),
+                                subtitle: Text(
+                                  day.note,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: Text(formattedDate),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

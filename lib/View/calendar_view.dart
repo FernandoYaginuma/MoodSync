@@ -1,180 +1,165 @@
-import 'package:android2/Controller/calendar_controller.dart';
-import 'package:android2/Controller/home_controller.dart';
-import 'package:android2/Model/day_model.dart';
-import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:android2/theme/colors.dart';
+import 'package:android2/Controller/calendar_controller.dart';
 
 class CalendarView extends StatefulWidget {
-  final DateTime initialDate;
+  final DateTime? initialDate;
 
-  const CalendarView({super.key, required this.initialDate});
+  const CalendarView({super.key, this.initialDate});
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
 }
 
 class _CalendarViewState extends State<CalendarView> {
-  late final CalendarController _calendarController;
-  final HomeController _homeController = HomeController.instance;
+  late CalendarController controller;
 
   @override
   void initState() {
     super.initState();
-    _calendarController = CalendarController(initialDate: widget.initialDate);
-  }
-
-  @override
-  void dispose() {
-    _calendarController.dispose();
-    super.dispose();
-  }
-
-  Color _getEmotionColor(String? emotion) {
-    switch (emotion) {
-      case 'Feliz':
-        return Colors.green.shade200;
-      case 'Agradecido':
-        return Colors.yellow.shade200;
-      case 'Confiante':
-        return Colors.blue.shade200;
-      case 'Triste':
-        return Colors.grey.shade400;
-      case 'Irritado':
-        return Colors.red.shade300;
-      case 'Ansioso':
-        return Colors.purple.shade200;
-      case 'Cansado':
-        return Colors.brown.shade200;
-      default:
-        return Colors.transparent;
-    }
+    final safeInitialDate = widget.initialDate ?? DateTime.now();
+    controller = CalendarController(initialDate: safeInitialDate);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Calendário de Humor"),
-        backgroundColor: AppColors.blueLogo,
-        foregroundColor: AppColors.blackBackground,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFB3E5FC),
+                Color(0xFFE1F5FE),
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          "Calendário de Humor",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+          ),
+        ),
+        centerTitle: true,
+        foregroundColor: AppColors.fontLogo,
+        backgroundColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: StreamBuilder<Map<String, DayModel>>(
-            stream: _homeController.getRegistrosStream(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: _buildBody(),
+    );
+  }
 
-              final dias = snapshot.data ?? {};
+  Widget _buildBody() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.blueLogo.withOpacity(0.25),
+            Colors.white,
+          ],
+        ),
+      ),
+      child: _content(),
+    );
+  }
 
-              return ValueListenableBuilder<DateTime?>(
-                valueListenable: _calendarController.selectedDay,
-                builder: (context, selectedDay, _) {
-                  return ValueListenableBuilder<DateTime>(
-                    valueListenable: _calendarController.focusedDay,
-                    builder: (context, focusedDay, _) {
-                      return Column(
-                        children: [
-                          TableCalendar(
-                            firstDay: DateTime.utc(2020, 1, 1),
-                            lastDay: DateTime.utc(2030, 12, 31),
-                            focusedDay: focusedDay,
-                            calendarFormat: CalendarFormat.month,
-                            locale: 'pt_BR',
-                            headerStyle: const HeaderStyle(
-                              formatButtonVisible: false,
-                              titleCentered: true,
-                            ),
-                            calendarStyle: const CalendarStyle(
-                              todayDecoration: BoxDecoration(
-                                color: AppColors.blueLogo,
-                                shape: BoxShape.circle,
-                              ),
-                              selectedDecoration: BoxDecoration(
-                                color: AppColors.fontLogo,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            selectedDayPredicate: (day) =>
-                                isSameDay(day, selectedDay),
-                            onDaySelected: (newSelectedDay, newFocusedDay) {
-                              _calendarController.onDaySelected(
-                                  context, newSelectedDay, newFocusedDay);
-                            },
-                            onPageChanged: (newFocusedDay) {
-                              _calendarController.onPageChanged(newFocusedDay);
-                            },
-                            calendarBuilders: CalendarBuilders(
-                              defaultBuilder: (context, day, focusedDay) {
-                                final key =
-                                    "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-                                final dayModel = dias[key];
-
-                                if (dayModel != null &&
-                                    dayModel.emotion != null) {
-                                  return Container(
-                                    margin: const EdgeInsets.all(4.0),
-                                    decoration: BoxDecoration(
-                                      color: _getEmotionColor(dayModel.emotion),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${day.day}',
-                                        style: const TextStyle(
-                                            color: Colors.black),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          if (selectedDay != null) ...[
-                            Text(
-                              "Dia selecionado: ${DateFormat('dd/MM/yyyy').format(selectedDay)}",
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 20),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/professional');
-                              },
-                              icon: const Icon(Icons.person_add_alt_1,
-                                  color: AppColors.fontLogo),
-                              label: const Text(
-                                "Adicionar profissional",
-                                style: TextStyle(color: AppColors.fontLogo),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 16),
-                                side:
-                                    const BorderSide(color: AppColors.blueLogo),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
-                  );
-                },
+  Widget _content() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          _calendarCard(),
+          const SizedBox(height: 24),
+          ValueListenableBuilder<DateTime?>(
+            valueListenable: controller.selectedDay,
+            builder: (context, selectedDay, _) {
+              final safeSelected = selectedDay ?? DateTime.now();
+              return Text(
+                'Dia selecionado: ${safeSelected.day.toString().padLeft(2, '0')}/${safeSelected.month.toString().padLeft(2, '0')}/${safeSelected.year}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.blackBackground,
+                ),
               );
             },
           ),
-        ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 45,
+            width: 240,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/professional'),
+              icon: const Icon(Icons.group_add_outlined),
+              label: const Text('Adicionar profissional'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.blueLogo,
+                foregroundColor: AppColors.fontLogo,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _calendarCard() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ValueListenableBuilder<DateTime>(
+        valueListenable: controller.focusedDay,
+        builder: (context, focusedDay, _) {
+          final safeFocused = focusedDay ?? DateTime.now();
+          final safeSelected = controller.selectedDay.value ?? safeFocused;
+
+          return TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: safeFocused,
+            selectedDayPredicate: (day) => isSameDay(safeSelected, day),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: AppColors.blueLogo,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: AppColors.fontLogo,
+                shape: BoxShape.circle,
+              ),
+            ),
+            onDaySelected: (selectedDay, focusedDay) {
+              controller.onDaySelected(context, selectedDay, focusedDay);
+              setState(() {});
+            },
+            onPageChanged: controller.onPageChanged,
+          );
+        },
       ),
     );
   }
