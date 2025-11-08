@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:android2/Controller/profissional_register_controller';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:android2/Controller/register_controller.dart';
@@ -11,8 +12,12 @@ class RegisterView extends StatefulWidget {
   State<RegisterView> createState() => _RegisterViewState();
 }
 
-class _RegisterViewState extends State<RegisterView> {
-  final controller = RegisterController();
+class _RegisterViewState extends State<RegisterView>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final RegisterController patientController = RegisterController();
+  final ProfessionalRegisterController professionalController = ProfessionalRegisterController();
+
   final List<String> sexOptions = [
     'Masculino',
     'Feminino',
@@ -21,23 +26,31 @@ class _RegisterViewState extends State<RegisterView> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
   void dispose() {
-    controller.dispose();
+    _tabController.dispose();
+    patientController.dispose();
+    professionalController.dispose();
     super.dispose();
   }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: controller.dataNascimentoSelecionada ?? DateTime(2000),
+      initialDate: patientController.dataNascimentoSelecionada ?? DateTime(2000),
       firstDate: DateTime(1920, 1),
       lastDate: DateTime.now(),
       locale: const Locale('pt', 'BR'),
     );
-    if (picked != null && picked != controller.dataNascimentoSelecionada) {
+    if (picked != null) {
       setState(() {
-        controller.dataNascimentoSelecionada = picked;
-        controller.dataNascimentoController.text =
+        patientController.dataNascimentoSelecionada = picked;
+        patientController.dataNascimentoController.text =
             DateFormat('dd/MM/yyyy').format(picked);
       });
     }
@@ -47,10 +60,58 @@ class _RegisterViewState extends State<RegisterView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastro'),
         backgroundColor: AppColors.blueLogo,
-        foregroundColor: Colors.white,
         elevation: 0,
+        title: const Text(
+          'Cadastro',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.6),
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              labelColor: AppColors.blueLogo,
+              unselectedLabelColor: Colors.white,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+              tabs: const [
+                Tab(
+                  icon: Icon(Icons.person_outline),
+                  text: 'Paciente',
+                ),
+                Tab(
+                  icon: Icon(Icons.medical_services_outlined),
+                  text: 'Profissional',
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -65,7 +126,6 @@ class _RegisterViewState extends State<RegisterView> {
         ),
         child: Stack(
           children: [
-            // Bolhas decorativas
             Positioned(
               top: -60,
               left: -80,
@@ -86,8 +146,6 @@ class _RegisterViewState extends State<RegisterView> {
               left: -40,
               child: _bubble(160, AppColors.blueLogo.withOpacity(0.15)),
             ),
-
-            // Conteúdo principal
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
@@ -108,155 +166,13 @@ class _RegisterViewState extends State<RegisterView> {
                           ),
                         ],
                       ),
-                      child: Form(
-                        key: controller.formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                      child: SizedBox(
+                        height: 650,
+                        child: TabBarView(
+                          controller: _tabController,
                           children: [
-                            const Text(
-                              'Preencha seus dados:',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-
-                            TextFormField(
-                              controller: controller.nomeController,
-                              decoration: _dec('Nome'),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Informe seu nome'
-                                  : null,
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: controller.emailController,
-                              decoration: _dec('E-mail'),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Informe seu e-mail';
-                                }
-                                final emailRegex =
-                                RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                                return emailRegex.hasMatch(value)
-                                    ? null
-                                    : 'E-mail inválido';
-                              },
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: controller.telefoneController,
-                              decoration: _dec('Telefone'),
-                              keyboardType: TextInputType.phone,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Informe seu telefone';
-                                }
-                                final digitsOnly =
-                                value.replaceAll(RegExp(r'[^0-9]'), '');
-                                return digitsOnly.length >= 10
-                                    ? null
-                                    : 'Telefone inválido';
-                              },
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: controller.dataNascimentoController,
-                              decoration: _dec('Data de Nascimento').copyWith(
-                                suffixIcon: const Icon(Icons.calendar_today),
-                              ),
-                              readOnly: true,
-                              onTap: () => _selectDate(context),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Informe sua data de nascimento'
-                                  : null,
-                            ),
-                            const SizedBox(height: 12),
-
-                            DropdownButtonFormField<String>(
-                              decoration: _dec('Sexo'),
-                              value: controller.sexoSelecionado,
-                              items: sexOptions
-                                  .map((label) => DropdownMenuItem(
-                                value: label,
-                                child: Text(label),
-                              ))
-                                  .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  controller.sexoSelecionado = value;
-                                });
-                              },
-                              validator: (value) => value == null
-                                  ? 'Selecione uma opção'
-                                  : null,
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: controller.senhaController,
-                              obscureText: true,
-                              decoration: _dec('Senha'),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor, insira uma senha.';
-                                }
-                                if (value.length < 8) {
-                                  return 'Mínimo de 8 caracteres.';
-                                }
-                                if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                                  return 'É necessária ao menos uma letra maiúscula.';
-                                }
-                                if (!RegExp(r'[a-z]').hasMatch(value)) {
-                                  return 'É necessária ao menos uma letra minúscula.';
-                                }
-                                if (!RegExp(r'[0-9]').hasMatch(value)) {
-                                  return 'É necessário ao menos um número.';
-                                }
-                                if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]')
-                                    .hasMatch(value)) {
-                                  return 'É necessário ao menos um caractere especial.';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 12),
-
-                            TextFormField(
-                              controller: controller.confirmarSenhaController,
-                              obscureText: true,
-                              decoration: _dec('Confirmar Senha'),
-                              validator: (value) =>
-                              value != controller.senhaController.text
-                                  ? 'As senhas não coincidem'
-                                  : null,
-                            ),
-                            const SizedBox(height: 24),
-
-                            SizedBox(
-                              height: 50,
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () => controller.cadastrar(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.blueLogo,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Cadastrar',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              ),
-                            ),
+                            _buildPatientForm(context),
+                            _buildProfessionalForm(context),
                           ],
                         ),
                       ),
@@ -271,28 +187,198 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
+  // --------------------------- Paciente ---------------------------
+  Widget _buildPatientForm(BuildContext context) {
+    final c = patientController;
+    return Form(
+      key: c.formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Cadastro de Paciente',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: c.nomeController,
+            decoration: _dec('Nome completo'),
+            validator: (v) => v!.isEmpty ? 'Informe o nome' : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.emailController,
+            decoration: _dec('E-mail'),
+            keyboardType: TextInputType.emailAddress,
+            validator: (v) => v!.contains('@') ? null : 'E-mail inválido',
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.telefoneController,
+            decoration: _dec('Telefone'),
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.dataNascimentoController,
+            readOnly: true,
+            decoration: _dec('Data de Nascimento').copyWith(
+              suffixIcon: const Icon(Icons.calendar_today),
+            ),
+            onTap: () => _selectDate(context),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            decoration: _dec('Sexo'),
+            value: c.sexoSelecionado,
+            items: sexOptions
+                .map((label) => DropdownMenuItem(
+                      value: label,
+                      child: Text(label),
+                    ))
+                .toList(),
+            onChanged: (value) => setState(() {
+              c.sexoSelecionado = value;
+            }),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.senhaController,
+            decoration: _dec('Senha'),
+            obscureText: true,
+            validator: (v) => v!.length < 8 ? 'Mínimo de 8 caracteres' : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.confirmarSenhaController,
+            decoration: _dec('Confirmar senha'),
+            obscureText: true,
+            validator: (v) =>
+                v != c.senhaController.text ? 'As senhas não coincidem' : null,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => c.cadastrar(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.blueLogo,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Cadastrar Paciente'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------- Profissional ---------------------------
+  Widget _buildProfessionalForm(BuildContext context) {
+    final c = professionalController;
+    return Form(
+      key: c.formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Cadastro de Profissional',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: c.nomeController,
+            decoration: _dec('Nome completo'),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.emailController,
+            decoration: _dec('E-mail'),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.telefoneController,
+            decoration: _dec('Telefone profissional'),
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.especialidadeController,
+            decoration: _dec('Especialidade'),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.registroProfissionalController,
+            decoration: _dec('Registro Profissional (CRP, CRM, etc.)'),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.descricaoController,
+            decoration: _dec('Descrição / Apresentação'),
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.senhaController,
+            decoration: _dec('Senha'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: c.confirmarSenhaController,
+            decoration: _dec('Confirmar senha'),
+            obscureText: true,
+            validator: (v) =>
+                v != c.senhaController.text ? 'As senhas não coincidem' : null,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => c.cadastrar(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.blueLogo,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Cadastrar Profissional'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   InputDecoration _dec(String label) => InputDecoration(
-    labelText: label,
-    filled: true,
-    fillColor: Colors.white,
-    contentPadding:
-    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-  );
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      );
 
   Widget _bubble(double size, Color color) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: color,
-      shape: BoxShape.circle,
-      boxShadow: [
-        BoxShadow(
-          color: color.withOpacity(0.35),
-          blurRadius: 24,
-          spreadRadius: 4,
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.35),
+              blurRadius: 24,
+              spreadRadius: 4,
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
