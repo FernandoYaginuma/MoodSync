@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:android2/Controller/profissional_register_controller';
+import 'package:android2/Controller/profissional_register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:android2/Controller/register_controller.dart';
@@ -60,18 +60,21 @@ class _RegisterViewState extends State<RegisterView>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: true,
         backgroundColor: AppColors.blueLogo,
-        elevation: 0,
+        elevation: 3,
+        shadowColor: Colors.black.withOpacity(0.2),
         title: const Text(
           'Cadastro',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 22,
           ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(70),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
@@ -234,9 +237,9 @@ class _RegisterViewState extends State<RegisterView>
             value: c.sexoSelecionado,
             items: sexOptions
                 .map((label) => DropdownMenuItem(
-                      value: label,
-                      child: Text(label),
-                    ))
+              value: label,
+              child: Text(label),
+            ))
                 .toList(),
             onChanged: (value) => setState(() {
               c.sexoSelecionado = value;
@@ -255,7 +258,7 @@ class _RegisterViewState extends State<RegisterView>
             decoration: _dec('Confirmar senha'),
             obscureText: true,
             validator: (v) =>
-                v != c.senhaController.text ? 'As senhas não coincidem' : null,
+            v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -335,7 +338,7 @@ class _RegisterViewState extends State<RegisterView>
             decoration: _dec('Confirmar senha'),
             obscureText: true,
             validator: (v) =>
-                v != c.senhaController.text ? 'As senhas não coincidem' : null,
+            v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -358,27 +361,27 @@ class _RegisterViewState extends State<RegisterView>
   }
 
   InputDecoration _dec(String label) => InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-      );
+    labelText: label,
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding:
+    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+  );
 
   Widget _bubble(double size, Color color) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.35),
-              blurRadius: 24,
-              spreadRadius: 4,
-            ),
-          ],
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: color.withOpacity(0.35),
+          blurRadius: 24,
+          spreadRadius: 4,
         ),
-      );
+      ],
+    ),
+  );
 }
