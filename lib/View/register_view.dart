@@ -63,7 +63,6 @@ class _RegisterViewState extends State<RegisterView>
         automaticallyImplyLeading: true,
         backgroundColor: AppColors.blueLogo,
         elevation: 3,
-        shadowColor: Colors.black.withOpacity(0.2),
         title: const Text(
           'Cadastro',
           style: TextStyle(
@@ -87,30 +86,14 @@ class _RegisterViewState extends State<RegisterView>
               indicator: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.6),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-                ],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: AppColors.blueLogo,
               unselectedLabelColor: Colors.white,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.person_outline),
-                  text: 'Paciente',
-                ),
-                Tab(
-                  icon: Icon(Icons.medical_services_outlined),
-                  text: 'Profissional',
-                ),
+                Tab(icon: Icon(Icons.person_outline), text: 'Paciente'),
+                Tab(icon: Icon(Icons.medical_services_outlined), text: 'Profissional'),
               ],
             ),
           ),
@@ -127,68 +110,48 @@ class _RegisterViewState extends State<RegisterView>
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -60,
-              left: -80,
-              child: _bubble(300, AppColors.blueLogo.withOpacity(0.25)),
-            ),
-            Positioned(
-              top: 120,
-              right: -50,
-              child: _bubble(180, AppColors.blueLogo.withOpacity(0.18)),
-            ),
-            Positioned(
-              bottom: -60,
-              right: -80,
-              child: _bubble(260, AppColors.blueLogo.withOpacity(0.20)),
-            ),
-            Positioned(
-              bottom: 60,
-              left: -40,
-              child: _bubble(160, AppColors.blueLogo.withOpacity(0.15)),
-            ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 22,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 22,
+                        offset: const Offset(0, 8),
                       ),
-                      child: SizedBox(
-                        height: 650,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildPatientForm(context),
-                            _buildProfessionalForm(context),
-                          ],
-                        ),
-                      ),
+                    ],
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.75,
+                    ),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _scrollableForm(_buildPatientForm(context)),
+                        _scrollableForm(_buildProfessionalForm(context)),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _scrollableForm(Widget form) => SingleChildScrollView(child: form);
 
   // --------------------------- Paciente ---------------------------
   Widget _buildPatientForm(BuildContext context) {
@@ -198,11 +161,9 @@ class _RegisterViewState extends State<RegisterView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Cadastro de Paciente',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          const Text('Cadastro de Paciente',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           TextFormField(
             controller: c.nomeController,
@@ -236,14 +197,9 @@ class _RegisterViewState extends State<RegisterView>
             decoration: _dec('Sexo'),
             value: c.sexoSelecionado,
             items: sexOptions
-                .map((label) => DropdownMenuItem(
-              value: label,
-              child: Text(label),
-            ))
+                .map((label) => DropdownMenuItem(value: label, child: Text(label)))
                 .toList(),
-            onChanged: (value) => setState(() {
-              c.sexoSelecionado = value;
-            }),
+            onChanged: (value) => setState(() => c.sexoSelecionado = value),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -261,19 +217,15 @@ class _RegisterViewState extends State<RegisterView>
             v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => c.cadastrar(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blueLogo,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text('Cadastrar Paciente'),
+          ElevatedButton(
+            onPressed: () => c.cadastrar(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.blueLogo,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
+            child: const Text('Cadastrar Paciente'),
           ),
         ],
       ),
@@ -288,72 +240,40 @@ class _RegisterViewState extends State<RegisterView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Cadastro de Profissional',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          const Text('Cadastro de Profissional',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: c.nomeController,
-            decoration: _dec('Nome completo'),
-          ),
+          TextFormField(controller: c.nomeController, decoration: _dec('Nome completo')),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.emailController,
-            decoration: _dec('E-mail'),
-            keyboardType: TextInputType.emailAddress,
-          ),
+          TextFormField(controller: c.emailController, decoration: _dec('E-mail')),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.telefoneController,
-            decoration: _dec('Telefone profissional'),
-            keyboardType: TextInputType.phone,
-          ),
+          TextFormField(controller: c.telefoneController, decoration: _dec('Telefone profissional')),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.especialidadeController,
-            decoration: _dec('Especialidade'),
-          ),
+          TextFormField(controller: c.especialidadeController, decoration: _dec('Especialidade')),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.registroProfissionalController,
-            decoration: _dec('Registro Profissional (CRP, CRM, etc.)'),
-          ),
+          TextFormField(controller: c.registroProfissionalController, decoration: _dec('Registro Profissional (CRP, CRM, etc.)')),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.descricaoController,
-            decoration: _dec('Descrição / Apresentação'),
-            maxLines: 3,
-          ),
+          TextFormField(controller: c.descricaoController, decoration: _dec('Descrição / Apresentação'), maxLines: 3),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: c.senhaController,
-            decoration: _dec('Senha'),
-            obscureText: true,
-          ),
+          TextFormField(controller: c.senhaController, decoration: _dec('Senha'), obscureText: true),
           const SizedBox(height: 12),
           TextFormField(
             controller: c.confirmarSenhaController,
             decoration: _dec('Confirmar senha'),
             obscureText: true,
-            validator: (v) =>
-            v != c.senhaController.text ? 'As senhas não coincidem' : null,
+            validator: (v) => v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => c.cadastrar(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blueLogo,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text('Cadastrar Profissional'),
+          ElevatedButton(
+            onPressed: () => c.cadastrar(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.blueLogo,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
+            child: const Text('Cadastrar Profissional'),
           ),
         ],
       ),
@@ -364,8 +284,7 @@ class _RegisterViewState extends State<RegisterView>
     labelText: label,
     filled: true,
     fillColor: Colors.white,
-    contentPadding:
-    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
   );
 
@@ -375,13 +294,6 @@ class _RegisterViewState extends State<RegisterView>
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      boxShadow: [
-        BoxShadow(
-          color: color.withOpacity(0.35),
-          blurRadius: 24,
-          spreadRadius: 4,
-        ),
-      ],
     ),
   );
 }
