@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:android2/Controller/home_controller.dart';
 import 'package:android2/Model/day_model.dart';
 import 'package:android2/theme/colors.dart';
+import 'package:android2/View/patient_profile_view.dart'; // ✅ PERFIL DO PACIENTE
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -25,18 +26,62 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.blankBackground,
+
+      // ================================
+      // 🔵 APPBAR CORRIGIDO
+      // ================================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.blueLogo,
-        foregroundColor: AppColors.fontLogo,
-        title: const Text('MoodSync'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => controller.logout(context),
-          ),
-        ],
+        elevation: 0,
+
+        title: Row(
+          children: [
+            // 🔹 LOGOUT (ESQUERDA)
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () => controller.logout(context),
+            ),
+
+            const SizedBox(width: 8),
+
+            // 🔹 PERFIL DO PACIENTE (NÃO MAIS O DO PROFISSIONAL)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PatientProfileView()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.25),
+                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                ),
+                child: const Icon(Icons.person, color: Colors.white, size: 22),
+              ),
+            ),
+
+            const Spacer(),
+
+            // 🔹 MOODSYNC (DIREITA)
+            const Text(
+              "MoodSync",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
+
+      // ================================
+      // 🔵 CORPO
+      // ================================
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -50,7 +95,7 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: Stack(
           children: [
-            // bolhas decorativas
+            // Bolhas decorativas
             Positioned(
               top: -50,
               left: -80,
@@ -76,7 +121,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            // conteúdo principal
+            // Conteúdo principal
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -96,6 +141,7 @@ class _HomeViewState extends State<HomeView> {
                     },
                   ),
                   const SizedBox(height: 6),
+
                   Text(
                     'Como você está hoje?',
                     style: TextStyle(
@@ -135,8 +181,11 @@ class _HomeViewState extends State<HomeView> {
                         ),
                       ),
                       onDaySelected: (selectedDay, focusedDay) {
-                        Navigator.pushNamed(context, '/calendar',
-                            arguments: selectedDay);
+                        Navigator.pushNamed(
+                          context,
+                          '/calendar',
+                          arguments: selectedDay,
+                        );
                       },
                       onPageChanged: (focusedDay) {
                         setState(() {
@@ -145,6 +194,7 @@ class _HomeViewState extends State<HomeView> {
                       },
                     ),
                   ),
+
                   const SizedBox(height: 16),
 
                   const Text(
@@ -162,15 +212,16 @@ class _HomeViewState extends State<HomeView> {
                     child: StreamBuilder<Map<String, DayModel>>(
                       stream: controller.getRegistrosStream(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(
-                              child: CircularProgressIndicator());
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         if (snapshot.hasError) {
                           return const Center(
-                              child: Text("Erro ao carregar registros."));
+                            child: Text("Erro ao carregar registros."),
+                          );
                         }
 
                         final data = snapshot.data ?? {};
@@ -179,7 +230,8 @@ class _HomeViewState extends State<HomeView> {
 
                         if (diasOrdenados.isEmpty) {
                           return const Center(
-                              child: Text('Nenhum registro encontrado.'));
+                            child: Text('Nenhum registro encontrado.'),
+                          );
                         }
 
                         return ListView.builder(
@@ -195,15 +247,13 @@ class _HomeViewState extends State<HomeView> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              margin:
-                              const EdgeInsets.symmetric(vertical: 6),
+                              margin: const EdgeInsets.symmetric(vertical: 6),
                               child: ListTile(
                                 leading: const Icon(
                                   Icons.sentiment_satisfied_alt_outlined,
                                   color: AppColors.blueLogo,
                                 ),
-                                title:
-                                Text(day.emotion ?? 'Sem sentimento'),
+                                title: Text(day.emotion ?? 'Sem sentimento'),
                                 subtitle: Text(
                                   day.note,
                                   maxLines: 1,

@@ -5,6 +5,7 @@ import 'package:android2/Model/patient_model.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/View/add_patient_view.dart';
 import 'package:android2/View/profile_view.dart';
+import 'package:android2/View/patient_calendar_view.dart';  // <<<<< IMPORTANTE
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfessionalHomeView extends StatefulWidget {
@@ -41,24 +42,24 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
         foregroundColor: Colors.white,
         centerTitle: true,
 
-        // 🔹 Logout no canto esquerdo (AGORA FUNCIONA)
+        // 🔹 Logout no canto esquerdo
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
             await FirebaseAuth.instance.signOut();
             if (mounted) {
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/', (_) => false);
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
             }
           },
         ),
 
+        // 🔹 Nome do profissional
         title: Text(
           "Olá, ${widget.profissionalNome.split(' ').first}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
 
-        // 🔹 Perfil no canto direito
+        // 🔹 Botão perfil
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
@@ -151,6 +152,49 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
   // UI COMPONENTS
   // ============================================================
 
+  Widget _cardPaciente(PatientModel paciente) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.blueLogo.withOpacity(0.1),
+                child: const Icon(Icons.person, color: Colors.black54),
+              ),
+              title: Text(
+                paciente.nome,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(paciente.email),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+
+              // 🔥 QUANDO CLICAR: abrir calendário do paciente
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PatientCalendarView(
+                      pacienteId: paciente.id,
+                      pacienteNome: paciente.nome,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBackground() {
     return Stack(
       children: [
@@ -208,45 +252,11 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
     );
   }
 
-  Widget _cardPaciente(PatientModel paciente) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.blueLogo.withOpacity(0.1),
-                child: const Icon(Icons.person, color: Colors.black54),
-              ),
-              title: Text(
-                paciente.nome,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(paciente.email),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
-              onTap: () {
-                // abrir calendário do paciente futuramente
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _bubble(double size, Color color) {
     return Container(
       width: size,
       height: size,
-      decoration:
-      BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
