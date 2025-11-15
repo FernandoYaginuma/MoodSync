@@ -27,18 +27,20 @@ class LoginController {
       if (user == null) throw FirebaseAuthException(code: "user-null");
 
       // 🔍 Tenta buscar o usuário primeiro como profissional
-      final profissionalSnap =
-      await _firestore.collection('professionals').doc(user.uid).get();
+      final profissionalSnap = await _firestore
+          .collection('professionals')
+          .doc(user.uid)
+          .get();
 
-      // 🔍 Se não for profissional, tenta buscar como paciente
+      // 🔍 Se não for profissional, tenta buscar como PACIENTE na coleção CORRETA
       final pacienteSnap =
-      await _firestore.collection('patients').doc(user.uid).get();
+      await _firestore.collection('users').doc(user.uid).get();
+      //  ⬆️ AQUI era 'patients', agora é 'users'
 
       if (!profissionalSnap.exists && !pacienteSnap.exists) {
         throw Exception("Usuário não encontrado no banco de dados.");
       }
 
-      // Define os dados conforme o tipo
       String nome;
       bool isProfissional;
 
