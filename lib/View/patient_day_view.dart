@@ -69,7 +69,6 @@ class _PatientDayViewState extends State<PatientDayView> {
           : Stack(
         children: [
           _buildBackground(),
-
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -90,12 +89,15 @@ class _PatientDayViewState extends State<PatientDayView> {
                         ),
                       ],
                     ),
-
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _secaoTitulo("Sentimento"),
-                        _caixa(day?.emotion ?? "Sem sentimento"),
+                        _secaoTitulo("Sentimentos"),
+                        _caixa(
+                          (day?.emotions.isNotEmpty ?? false)
+                              ? day!.emotions.join(', ')
+                              : "Sem sentimentos registrados",
+                        ),
 
                         const SizedBox(height: 24),
                         _secaoTitulo("Anotação"),
@@ -133,9 +135,6 @@ class _PatientDayViewState extends State<PatientDayView> {
     );
   }
 
-  // ------------------------------------------------------------
-  // UI — TITULO DE SESSÃO
-  // ------------------------------------------------------------
   Widget _secaoTitulo(String texto) {
     return Text(
       texto,
@@ -147,9 +146,6 @@ class _PatientDayViewState extends State<PatientDayView> {
     );
   }
 
-  // ------------------------------------------------------------
-  // UI — CAIXA DE INFORMAÇÃO
-  // ------------------------------------------------------------
   Widget _caixa(String texto) {
     return Container(
       margin: const EdgeInsets.only(top: 10),
@@ -176,9 +172,6 @@ class _PatientDayViewState extends State<PatientDayView> {
     );
   }
 
-  // ------------------------------------------------------------
-  // FUNDO — GRADIENTE + BOLHAS
-  // ------------------------------------------------------------
   Widget _buildBackground() {
     return Stack(
       children: [
@@ -194,13 +187,11 @@ class _PatientDayViewState extends State<PatientDayView> {
             ),
           ),
         ),
-
         Positioned(
           top: -80,
           right: -50,
           child: _bubble(260, AppColors.blueLogo.withOpacity(0.23)),
         ),
-
         Positioned(
           bottom: -80,
           left: -40,

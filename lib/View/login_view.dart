@@ -23,7 +23,7 @@ class LoginHomeView extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // === FUNDO SUPERIOR MAIS VISÍVEL ===
+            // === FUNDO SUPERIOR ===
             Positioned(
               top: -40,
               left: -60,
@@ -52,7 +52,7 @@ class LoginHomeView extends StatelessWidget {
               child: _bubble(230, AppColors.blueLogo.withOpacity(0.16)),
             ),
 
-            // === CARTÃO E FORM ===
+            // === CARTÃO DO FORM ===
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -80,35 +80,24 @@ class LoginHomeView extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // Logo + tagline
+                              // ================================
+                              // LOGO (SEM TEXTO DUPLICADO)
+                              // ================================
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.only(bottom: 20),
                                 child: Column(
                                   children: [
-                                    Image.asset('lib/images/MoodSyncLogo.png', height: 120),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'MOODSYNC',
-                                      style: TextStyle(
-                                        color: AppColors.fontLogo,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.2,
-                                        fontSize: 22,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Conectando mentes',
-                                      style: TextStyle(
-                                        color: AppColors.fontLogo.withOpacity(0.7),
-                                        fontSize: 13,
-                                      ),
+                                    Image.asset(
+                                      'lib/images/MoodSyncLogo.png',
+                                      height: 140,
                                     ),
                                   ],
                                 ),
                               ),
 
                               const SizedBox(height: 10),
+
+                              // INPUTS -------------------------
                               _input(
                                 label: 'E-mail',
                                 controller: controller.emailController,
@@ -117,6 +106,7 @@ class LoginHomeView extends StatelessWidget {
                                 accent: AppColors.blueLogo,
                               ),
                               const SizedBox(height: 12),
+
                               _input(
                                 label: 'Senha',
                                 controller: controller.senhaController,
@@ -135,8 +125,10 @@ class LoginHomeView extends StatelessWidget {
                                   ),
                                 ),
                               ),
+
                               const SizedBox(height: 4),
 
+                              // BOTÃO ENTRAR --------------------
                               SizedBox(
                                 height: 52,
                                 child: ElevatedButton(
@@ -149,10 +141,13 @@ class LoginHomeView extends StatelessWidget {
                                     ),
                                     elevation: 2,
                                   ),
-                                  child: const Text('Entrar'),
+                                  child: const Text('Entrar', style: TextStyle(fontSize: 16)),
                                 ),
                               ),
+
                               const SizedBox(height: 8),
+
+                              // BOTÕES SECUNDÁRIOS -------------
                               TextButton(
                                 onPressed: () => Navigator.pushNamed(context, '/register'),
                                 child: const Text('Cadastrar'),
@@ -177,6 +172,7 @@ class LoginHomeView extends StatelessWidget {
   }
 
   // ===== widgets auxiliares =====
+
   Widget _bubble(double size, Color color) {
     return Container(
       width: size,

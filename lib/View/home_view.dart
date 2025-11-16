@@ -28,9 +28,6 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       backgroundColor: AppColors.blankBackground,
 
-      // ================================
-      // APP BAR
-      // ================================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.blueLogo,
@@ -46,8 +43,14 @@ class _HomeViewState extends State<HomeView> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PatientProfileView()),
-                );
+                  MaterialPageRoute(
+                    builder: (_) => const PatientProfileView(),
+                  ),
+                ).then((_) {
+                  // Quando voltar do perfil, recarrega os dados do usuário
+                  controller.carregarDadosUsuario();
+                  setState(() {});
+                });
               },
               child: Container(
                 padding: const EdgeInsets.all(8),
@@ -72,9 +75,6 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
 
-      // ================================
-      // CORPO
-      // ================================
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -88,7 +88,6 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: Stack(
           children: [
-            // Bolhas decorativas
             Positioned(
               top: -50,
               left: -80,
@@ -114,14 +113,11 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            // Conteúdo principal
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // Saudação
                   ValueListenableBuilder<String>(
                     valueListenable: controller.nomeUsuario,
                     builder: (context, nome, _) {
@@ -146,7 +142,6 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // CALENDÁRIO RESUMIDO
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -192,7 +187,6 @@ class _HomeViewState extends State<HomeView> {
 
                   const SizedBox(height: 16),
 
-                  // BOTÃO DO MURAL
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -227,7 +221,6 @@ class _HomeViewState extends State<HomeView> {
 
                   const SizedBox(height: 16),
 
-                  // REGISTROS RECENTES
                   const Text(
                     'Registros Recentes:',
                     style: TextStyle(
@@ -272,6 +265,10 @@ class _HomeViewState extends State<HomeView> {
                             final formattedDate =
                                 "${day.date.day.toString().padLeft(2, '0')}/${day.date.month.toString().padLeft(2, '0')}/${day.date.year}";
 
+                            final emotionsText = day.emotions.isEmpty
+                                ? 'Sem sentimentos'
+                                : day.emotions.join(', ');
+
                             return Card(
                               color: Colors.white.withOpacity(0.95),
                               elevation: 2,
@@ -284,7 +281,7 @@ class _HomeViewState extends State<HomeView> {
                                   Icons.sentiment_satisfied_alt_outlined,
                                   color: AppColors.blueLogo,
                                 ),
-                                title: Text(day.emotion ?? 'Sem sentimento'),
+                                title: Text(emotionsText),
                                 subtitle: Text(
                                   day.note,
                                   maxLines: 1,

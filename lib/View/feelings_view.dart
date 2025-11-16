@@ -1,35 +1,51 @@
-import 'package:android2/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:android2/theme/colors.dart';
+import 'package:android2/Utils/emotions_utils.dart'; // 👈 AJUSTADO
 
 class FeelingsView extends StatefulWidget {
-  final Function(String) onFeelingSelected;
+  final List<String> initialSelected;
 
-  const FeelingsView({super.key, required this.onFeelingSelected});
+  const FeelingsView({
+    super.key,
+    required this.initialSelected,
+  });
 
   @override
   State<FeelingsView> createState() => _FeelingsViewState();
 }
 
 class _FeelingsViewState extends State<FeelingsView> {
-  String? selectedFeeling;
+  late List<String> selectedFeelings;
 
-  final List<String> feelings = [
-    "Feliz",
-    "Triste",
-    "Ansioso",
-    "Irritado",
-    "Agradecido",
-    "Confiante",
-    "Cansado",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    selectedFeelings = List<String>.from(widget.initialSelected);
+  }
+
+  void _toggleFeeling(String feeling) {
+    setState(() {
+      if (selectedFeelings.contains(feeling)) {
+        selectedFeelings.remove(feeling);
+      } else {
+        if (selectedFeelings.length >= 3) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Você pode escolher até 3 sentimentos."),
+            ),
+          );
+          return;
+        }
+        selectedFeelings.add(feeling);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Fundo gradiente com bolhas
       body: Stack(
         children: [
-          // Fundo com gradiente
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -40,40 +56,14 @@ class _FeelingsViewState extends State<FeelingsView> {
             ),
           ),
 
-          // Bolhas decorativas
-          Positioned(
-            top: -50,
-            left: -60,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                color: AppColors.blueLogo.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -80,
-            right: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                color: AppColors.blueLogo.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          // Conteúdo
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // AppBar customizado
+
+                  // TITLE
                   Row(
                     children: [
                       IconButton(
@@ -83,7 +73,7 @@ class _FeelingsViewState extends State<FeelingsView> {
                       ),
                       const SizedBox(width: 8),
                       const Text(
-                        "Selecione seu sentimento",
+                        "Selecione seus sentimentos",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -96,64 +86,40 @@ class _FeelingsViewState extends State<FeelingsView> {
                   const SizedBox(height: 20),
 
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: feelings.length,
-                      itemBuilder: (context, index) {
-                        final feeling = feelings[index];
-                        final isSelected = selectedFeeling == feeling;
+                    child: ListView(
+                      children: [
+                        _buildCategory("Positivas", EmotionUtils.positive),
+                        const SizedBox(height: 20),
+                        _buildCategory("Negativas", EmotionUtils.negative),
+                        const SizedBox(height: 20),
+                        _buildCategory("Sociais", EmotionUtils.social),
+                      ],
+                    ),
+                  ),
 
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedFeeling = feeling;
-                            });
-                            Future.delayed(const Duration(milliseconds: 200),
-                                    () {
-                                  widget.onFeelingSelected(feeling);
-                                });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOut,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.blueLogo.withOpacity(0.2)
-                                  : Colors.white.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.blueLogo
-                                    : Colors.grey.shade300,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                if (isSelected)
-                                  BoxShadow(
-                                    color: AppColors.blueLogo.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                feeling,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: isSelected
-                                      ? AppColors.blueLogo
-                                      : AppColors.blackBackground,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ),
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    height: 52,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blueLogo,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop<List<String>>(
+                          context,
+                          selectedFeelings,
                         );
                       },
+                      child: const Text(
+                        "Confirmar sentimentos",
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ),
                 ],
@@ -161,6 +127,66 @@ class _FeelingsViewState extends State<FeelingsView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategory(String title, String category) {
+    final list = EmotionUtils.emotions
+        .where((e) => EmotionUtils.emotionCategory[e] == category)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.blackBackground,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...list.map((feeling) => _buildFeelingItem(feeling)),
+      ],
+    );
+  }
+
+  Widget _buildFeelingItem(String feeling) {
+    final isSelected = selectedFeelings.contains(feeling);
+    final color = EmotionUtils.emotionColor(feeling);
+
+    return GestureDetector(
+      onTap: () => _toggleFeeling(feeling),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.15) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.circle, size: 16, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                feeling,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.blackBackground,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -9,8 +9,24 @@ class DayController extends ChangeNotifier {
 
   DayController({required this.day});
 
-  void setEmotion(String emotion) {
-    day.emotion = emotion;
+  /// Define a lista completa de sentimentos (máx. 3)
+  void setEmotions(List<String> emotions) {
+    if (emotions.length > 3) {
+      day.emotions = emotions.take(3).toList();
+    } else {
+      day.emotions = emotions;
+    }
+    notifyListeners();
+  }
+
+  /// Atalho: adiciona/remove um sentimento (respeitando limite)
+  void toggleEmotion(String feeling) {
+    if (day.emotions.contains(feeling)) {
+      day.emotions.remove(feeling);
+    } else {
+      if (day.emotions.length >= 3) return;
+      day.emotions.add(feeling);
+    }
     notifyListeners();
   }
 

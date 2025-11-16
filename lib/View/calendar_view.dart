@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/Controller/calendar_controller.dart';
+import 'package:android2/Utils/emotions_utils.dart';
+import 'package:android2/View/day_view.dart';
 
 class CalendarView extends StatefulWidget {
   final DateTime? initialDate;
@@ -20,6 +22,17 @@ class _CalendarViewState extends State<CalendarView> {
     super.initState();
     final safeInitialDate = widget.initialDate ?? DateTime.now();
     controller = CalendarController(initialDate: safeInitialDate);
+
+    // Carrega registros iniciais e redesenha quando terminar
+    controller.carregarRegistros().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -131,18 +144,21 @@ class _CalendarViewState extends State<CalendarView> {
       child: ValueListenableBuilder<DateTime>(
         valueListenable: controller.focusedDay,
         builder: (context, focusedDay, _) {
-          final safeFocused = focusedDay ?? DateTime.now();
+          final safeFocused = focusedDay;
           final safeSelected = controller.selectedDay.value ?? safeFocused;
 
           return TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: safeFocused,
+
             selectedDayPredicate: (day) => isSameDay(safeSelected, day),
+
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
             ),
+
             calendarStyle: const CalendarStyle(
               todayDecoration: BoxDecoration(
                 color: AppColors.blueLogo,
@@ -153,11 +169,53 @@ class _CalendarViewState extends State<CalendarView> {
                 shape: BoxShape.circle,
               ),
             ),
-            onDaySelected: (selectedDay, focusedDay) {
-              controller.onDaySelected(context, selectedDay, focusedDay);
-              setState(() {});
+
+            // MARCADORES COLORIDOS DAS EMOÇÕES
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, _) {
+                final emotion = controller.emotionOfDay(date);
+                if (emotion == null) return const SizedBox();
+
+                final color = EmotionUtils.emotionColor(emotion);
+
+                return Positioned(
+                  bottom: 4,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            onDaySelected: (selectedDay, focusedDay) async {
+              controller.selectedDay.value = selectedDay;
+              controller.focusedDay.value = focusedDay;
+
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DayView(selectedDate: selectedDay),
+                ),
+              );
+
+              // Se salvou o dia, recarrega registros e redesenha
+              if (result == true) {
+                await controller.carregarRegistros();
+                if (mounted) setState(() {});
+              }
             },
-            onPageChanged: controller.onPageChanged,
+
+            onPageChanged: (focusedDay) {
+              controller.onPageChanged(focusedDay);
+              controller.carregarRegistros().then((_) {
+                if (mounted) setState(() {});
+              });
+            },
           );
         },
       ),

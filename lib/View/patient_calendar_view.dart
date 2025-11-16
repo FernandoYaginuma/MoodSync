@@ -46,9 +46,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // -------------------------------------------
-            // CALENDÁRIO
-            // -------------------------------------------
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -71,7 +68,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                   titleCentered: true,
                   formatButtonVisible: false,
                 ),
-
                 onDaySelected: (selected, focused) {
                   Navigator.push(
                     context,
@@ -83,7 +79,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                     ),
                   );
                 },
-
                 selectedDayPredicate: (day) => false,
                 onPageChanged: (focused) => _focusedDay = focused,
               ),
@@ -91,9 +86,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
 
             const SizedBox(height: 20),
 
-            // -------------------------------------------
-            // BOTÃO DO MURAL
-            // -------------------------------------------
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -125,9 +117,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
 
             const SizedBox(height: 15),
 
-            // -------------------------------------------
-            // LISTA DE REGISTROS DO PACIENTE
-            // -------------------------------------------
             Expanded(
               child: StreamBuilder<Map<String, DayModel>>(
                 stream: controller.getRegistros(),
@@ -158,6 +147,10 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                       final date =
                           "${day.date.day.toString().padLeft(2, '0')}/${day.date.month}/${day.date.year}";
 
+                      final emotionsText = day.emotions.isEmpty
+                          ? "Sem sentimentos"
+                          : day.emotions.join(', ');
+
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.blueGrey.shade50,
@@ -168,7 +161,7 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           title: Text(
-                            day.emotion ?? "Sem sentimento",
+                            emotionsText,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -185,7 +178,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                               color: Colors.black54,
                             ),
                           ),
-
                           onTap: () {
                             Navigator.push(
                               context,
