@@ -1,9 +1,13 @@
 import 'dart:ui';
-import 'package:android2/Controller/profissional_register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:android2/Controller/register_controller.dart';
+
 import 'package:android2/theme/colors.dart';
+import 'package:android2/Controller/register_controller.dart';
+import 'package:android2/Controller/profissional_register_controller.dart';
+
+import 'terms_view.dart';
+import 'privacy_view.dart'; // 🔵 NOVO
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -15,8 +19,17 @@ class RegisterView extends StatefulWidget {
 class _RegisterViewState extends State<RegisterView>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
   final RegisterController patientController = RegisterController();
-  final ProfessionalRegisterController professionalController = ProfessionalRegisterController();
+  final ProfessionalRegisterController professionalController =
+  ProfessionalRegisterController();
+
+  // TERmos e privacidade
+  bool aceitaTermosPaciente = false;
+  bool aceitaPrivacidadePaciente = false;
+
+  bool aceitaTermosProfissional = false;
+  bool aceitaPrivacidadeProfissional = false;
 
   final List<String> sexOptions = [
     'Masculino',
@@ -40,13 +53,15 @@ class _RegisterViewState extends State<RegisterView>
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
-      initialDate: patientController.dataNascimentoSelecionada ?? DateTime(2000),
+      initialDate:
+      patientController.dataNascimentoSelecionada ?? DateTime(2000),
       firstDate: DateTime(1920, 1),
       lastDate: DateTime.now(),
       locale: const Locale('pt', 'BR'),
     );
+
     if (picked != null) {
       setState(() {
         patientController.dataNascimentoSelecionada = picked;
@@ -60,16 +75,11 @@ class _RegisterViewState extends State<RegisterView>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: true,
         backgroundColor: AppColors.blueLogo,
-        elevation: 3,
+        foregroundColor: Colors.white,
         title: const Text(
           'Cadastro',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         bottom: PreferredSize(
@@ -79,7 +89,6 @@ class _RegisterViewState extends State<RegisterView>
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.25),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: TabBar(
               controller: _tabController,
@@ -87,13 +96,13 @@ class _RegisterViewState extends State<RegisterView>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
               labelColor: AppColors.blueLogo,
               unselectedLabelColor: Colors.white,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
               tabs: const [
                 Tab(icon: Icon(Icons.person_outline), text: 'Paciente'),
-                Tab(icon: Icon(Icons.medical_services_outlined), text: 'Profissional'),
+                Tab(
+                    icon: Icon(Icons.medical_services_outlined),
+                    text: 'Profissional'),
               ],
             ),
           ),
@@ -102,17 +111,16 @@ class _RegisterViewState extends State<RegisterView>
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.blueLogo.withOpacity(0.25),
-              Colors.white,
-            ],
-          ),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.blueLogo.withOpacity(0.25),
+                Colors.white,
+              ]),
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(24),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: BackdropFilter(
@@ -122,18 +130,9 @@ class _RegisterViewState extends State<RegisterView>
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 22,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
                   ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.75,
-                    ),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.75,
                     child: TabBarView(
                       controller: _tabController,
                       children: [
@@ -151,11 +150,13 @@ class _RegisterViewState extends State<RegisterView>
     );
   }
 
-  Widget _scrollableForm(Widget form) => SingleChildScrollView(child: form);
+  Widget _scrollableForm(Widget form) =>
+      SingleChildScrollView(child: form);
 
-  // --------------------------- Paciente ---------------------------
+  // --------------------------- PACIENTE ---------------------------
   Widget _buildPatientForm(BuildContext context) {
     final c = patientController;
+
     return Form(
       key: c.formKey,
       child: Column(
@@ -165,50 +166,54 @@ class _RegisterViewState extends State<RegisterView>
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
+
           TextFormField(
             controller: c.nomeController,
             decoration: _dec('Nome completo'),
             validator: (v) => v!.isEmpty ? 'Informe o nome' : null,
           ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.emailController,
             decoration: _dec('E-mail'),
             keyboardType: TextInputType.emailAddress,
-            validator: (v) => v!.contains('@') ? null : 'E-mail inválido',
           ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.telefoneController,
             decoration: _dec('Telefone'),
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.dataNascimentoController,
             readOnly: true,
-            decoration: _dec('Data de Nascimento').copyWith(
-              suffixIcon: const Icon(Icons.calendar_today),
-            ),
+            decoration: _dec('Data de Nascimento')
+                .copyWith(suffixIcon: const Icon(Icons.calendar_today)),
             onTap: () => _selectDate(context),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
+
+          DropdownButtonFormField(
             decoration: _dec('Sexo'),
             value: c.sexoSelecionado,
             items: sexOptions
-                .map((label) => DropdownMenuItem(value: label, child: Text(label)))
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
             onChanged: (value) => setState(() => c.sexoSelecionado = value),
           ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.senhaController,
             decoration: _dec('Senha'),
             obscureText: true,
-            validator: (v) => v!.length < 8 ? 'Mínimo de 8 caracteres' : null,
           ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.confirmarSenhaController,
             decoration: _dec('Confirmar senha'),
@@ -216,25 +221,64 @@ class _RegisterViewState extends State<RegisterView>
             validator: (v) =>
             v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 16),
+
+          // 🔵 Termos Uso
+          _checkboxLink(
+            aceitaTermosPaciente,
+                (v) => setState(() => aceitaTermosPaciente = v!),
+            "Termos de Uso",
+                () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => TermsView()),
+            ),
+          ),
+
+          // 🔵 Política privacidade
+          _checkboxLink(
+            aceitaPrivacidadePaciente,
+                (v) => setState(() => aceitaPrivacidadePaciente = v!),
+            "Política de Privacidade",
+                () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PrivacyView()),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
           ElevatedButton(
-            onPressed: () => c.cadastrar(context),
+            onPressed: () {
+              if (!aceitaTermosPaciente || !aceitaPrivacidadePaciente) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Você precisa aceitar os Termos e a Política.'),
+                  ),
+                );
+                return;
+              }
+              c.cadastrar(context);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blueLogo,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
             ),
             child: const Text('Cadastrar Paciente'),
-          ),
+          )
         ],
       ),
     );
   }
 
-  // --------------------------- Profissional ---------------------------
+  // --------------------------- PROFISSIONAL ---------------------------
   Widget _buildProfessionalForm(BuildContext context) {
     final c = professionalController;
+
     return Form(
       key: c.formKey,
       child: Column(
@@ -244,56 +288,159 @@ class _RegisterViewState extends State<RegisterView>
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          TextFormField(controller: c.nomeController, decoration: _dec('Nome completo')),
+
+          TextFormField(
+            controller: c.nomeController,
+            decoration: _dec('Nome completo'),
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.emailController, decoration: _dec('E-mail')),
+
+          TextFormField(
+            controller: c.emailController,
+            decoration: _dec('E-mail'),
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.telefoneController, decoration: _dec('Telefone profissional')),
+
+          TextFormField(
+            controller: c.telefoneController,
+            decoration: _dec('Telefone profissional'),
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.especialidadeController, decoration: _dec('Especialidade')),
+
+          TextFormField(
+            controller: c.especialidadeController,
+            decoration: _dec('Especialidade'),
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.registroProfissionalController, decoration: _dec('Registro Profissional (CRP, CRM, etc.)')),
+
+          TextFormField(
+            controller: c.registroProfissionalController,
+            decoration: _dec('Registro Profissional (CRP, CRM, etc.)'),
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.descricaoController, decoration: _dec('Descrição / Apresentação'), maxLines: 3),
+
+          TextFormField(
+            controller: c.descricaoController,
+            decoration: _dec('Descrição / Apresentação'),
+            maxLines: 3,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: c.senhaController, decoration: _dec('Senha'), obscureText: true),
+
+          TextFormField(
+            controller: c.senhaController,
+            decoration: _dec('Senha'),
+            obscureText: true,
+          ),
           const SizedBox(height: 12),
+
           TextFormField(
             controller: c.confirmarSenhaController,
             decoration: _dec('Confirmar senha'),
             obscureText: true,
-            validator: (v) => v != c.senhaController.text ? 'As senhas não coincidem' : null,
+            validator: (v) =>
+            v != c.senhaController.text ? 'As senhas não coincidem' : null,
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 16),
+
+          // 🔵 Termos
+          _checkboxLink(
+            aceitaTermosProfissional,
+                (v) => setState(() => aceitaTermosProfissional = v!),
+            "Termos de Uso",
+                () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => TermsView()),
+            ),
+          ),
+
+          // 🔵 Política privacidade
+          _checkboxLink(
+            aceitaPrivacidadeProfissional,
+                (v) => setState(() => aceitaPrivacidadeProfissional = v!),
+            "Política de Privacidade",
+                () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PrivacyView()),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
           ElevatedButton(
-            onPressed: () => c.cadastrar(context),
+            onPressed: () {
+              if (!aceitaTermosProfissional ||
+                  !aceitaPrivacidadeProfissional) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Você precisa aceitar os Termos e a Política.'),
+                  ),
+                );
+                return;
+              }
+
+              c.cadastrar(context);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blueLogo,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
             ),
             child: const Text('Cadastrar Profissional'),
-          ),
+          )
         ],
       ),
     );
   }
 
+  // DECORAÇÃO DE INPUT
   InputDecoration _dec(String label) => InputDecoration(
     labelText: label,
     filled: true,
     fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+    contentPadding:
+    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14)),
   );
 
-  Widget _bubble(double size, Color color) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: color,
-      shape: BoxShape.circle,
-    ),
-  );
+  // COMPONENTE REUTILIZÁVEL PARA TERmos E POLÍTICA
+  Widget _checkboxLink(
+      bool value,
+      Function(bool?) onChanged,
+      String linkText,
+      VoidCallback onTap,
+      ) {
+    return Row(
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Text.rich(
+              TextSpan(
+                text: 'Li e concordo com a ',
+                children: [
+                  TextSpan(
+                    text: linkText,
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
 }

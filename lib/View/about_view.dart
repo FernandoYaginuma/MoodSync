@@ -18,7 +18,6 @@ class AboutView extends StatelessWidget {
         elevation: 0,
       ),
       body: Container(
-        // Gradiente de fundo suave
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -31,7 +30,7 @@ class AboutView extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Halo e bolhas discretas FORA do cartão
+            // Bolhas / halo
             Positioned(
               top: -40,
               left: -60,
@@ -53,7 +52,6 @@ class AboutView extends StatelessWidget {
               child: _bubble(220, AppColors.blueLogo.withOpacity(0.14)),
             ),
 
-            // Conteúdo principal (card “glass” + scroll)
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -80,22 +78,11 @@ class AboutView extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Logo opcional (comente se não quiser)
+                              // Logo sem redundância
                               Center(
-                                child: Column(
-                                  children: [
-                                    Image.asset('lib/images/MoodSyncLogo.png', height: 96),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'MOODSYNC',
-                                      style: TextStyle(
-                                        color: AppColors.fontLogo,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.2,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                  ],
+                                child: Image.asset(
+                                  'lib/images/MoodSyncLogo.png',
+                                  height: 90,
                                 ),
                               ),
                               const SizedBox(height: 18),
@@ -139,8 +126,7 @@ class AboutView extends StatelessWidget {
                                 controller.equipe,
                                 style: const TextStyle(fontSize: 16, height: 1.4),
                               ),
-
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                             ],
                           ),
                         ),

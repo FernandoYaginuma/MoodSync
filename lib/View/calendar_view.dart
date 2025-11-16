@@ -20,6 +20,7 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   void initState() {
     super.initState();
+
     final safeInitialDate = widget.initialDate ?? DateTime.now();
     controller = CalendarController(initialDate: safeInitialDate);
 
@@ -110,6 +111,9 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
+  // ============================================================
+  // 🔷 CARTÃO DO CALENDÁRIO
+  // ============================================================
   Widget _calendarCard() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -131,6 +135,8 @@ class _CalendarViewState extends State<CalendarView> {
           final safeSelected = controller.selectedDay.value ?? safeFocused;
 
           return TableCalendar(
+            locale: 'pt_BR', // 🔵 AGORA O CALENDÁRIO FICA EM PORTUGUÊS
+
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: safeFocused,
@@ -174,6 +180,7 @@ class _CalendarViewState extends State<CalendarView> {
               },
             ),
 
+            // Quando o usuário escolher um dia
             onDaySelected: (selectedDay, focusedDay) async {
               controller.selectedDay.value = selectedDay;
               controller.focusedDay.value = focusedDay;
