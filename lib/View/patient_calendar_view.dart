@@ -4,6 +4,7 @@ import 'package:android2/Controller/patient_calendar_controller.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:android2/View/patient_day_view.dart';
+import 'package:android2/View/patient_mural_view.dart';
 
 class PatientCalendarView extends StatefulWidget {
   final String pacienteId;
@@ -38,13 +39,16 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
         title: Text("Registros de ${widget.pacienteNome}"),
         backgroundColor: AppColors.blueLogo,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
 
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // -------------------------------------------
             // CALENDÁRIO
+            // -------------------------------------------
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -54,6 +58,7 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -67,7 +72,6 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                   formatButtonVisible: false,
                 ),
 
-                // 🔵 ABRE A TELA DE DETALHES DO DIA
                 onDaySelected: (selected, focused) {
                   Navigator.push(
                     context,
@@ -80,13 +84,50 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                   );
                 },
 
+                selectedDayPredicate: (day) => false,
                 onPageChanged: (focused) => _focusedDay = focused,
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // LISTA DE REGISTROS
+            // -------------------------------------------
+            // BOTÃO DO MURAL
+            // -------------------------------------------
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                label: const Text(
+                  "Ver Mural do Profissional",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blueLogo,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PatientMuralView(
+                        pacienteId: widget.pacienteId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            // -------------------------------------------
+            // LISTA DE REGISTROS DO PACIENTE
+            // -------------------------------------------
             Expanded(
               child: StreamBuilder<Map<String, DayModel>>(
                 stream: controller.getRegistros(),
@@ -97,30 +138,54 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
 
                   final dias = snapshot.data!;
                   if (dias.isEmpty) {
-                    return const Center(child: Text("Sem registros ainda."));
+                    return const Center(
+                      child: Text(
+                        "Sem registros ainda.",
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    );
                   }
 
                   final lista = dias.values.toList()
                     ..sort((a, b) => b.date.compareTo(a.date));
 
-                  return ListView.builder(
+                  return ListView.separated(
                     itemCount: lista.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, i) {
                       final day = lista[i];
+
                       final date =
                           "${day.date.day.toString().padLeft(2, '0')}/${day.date.month}/${day.date.year}";
 
-                      return Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.shade50,
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: ListTile(
-                          title: Text(day.emotion ?? "Sem sentimento"),
-                          subtitle: Text(day.note),
-                          trailing: Text(date),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          title: Text(
+                            day.emotion ?? "Sem sentimento",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            day.note,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: Text(
+                            date,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
 
-                          // 🔵 AQUI TORNA O CARD CLICÁVEL
                           onTap: () {
                             Navigator.push(
                               context,

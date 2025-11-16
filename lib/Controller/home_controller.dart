@@ -10,12 +10,15 @@ class HomeController {
 
   final ValueNotifier<String> nomeUsuario = ValueNotifier('Usuário');
 
+  /// 🔵 Agora EXISTE!
+  String get userId => FirebaseAuth.instance.currentUser!.uid;
+
   Future<void> carregarDadosUsuario() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     if (userDoc.exists && userDoc.data()!.containsKey('nome')) {
       nomeUsuario.value = userDoc.data()!['nome'];
     }

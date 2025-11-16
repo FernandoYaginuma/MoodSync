@@ -5,7 +5,8 @@ import 'package:android2/Model/patient_model.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/View/add_patient_view.dart';
 import 'package:android2/View/profile_view.dart';
-import 'package:android2/View/patient_calendar_view.dart';  // <<<<< IMPORTANTE
+import 'package:android2/View/patient_calendar_view.dart';
+import 'package:android2/View/professional_mural_view.dart';   // <<<<<<<<<< IMPORTANTE
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfessionalHomeView extends StatefulWidget {
@@ -42,7 +43,6 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
         foregroundColor: Colors.white,
         centerTitle: true,
 
-        // 🔹 Logout no canto esquerdo
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
@@ -53,13 +53,11 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
           },
         ),
 
-        // 🔹 Nome do profissional
         title: Text(
           "Olá, ${widget.profissionalNome.split(' ').first}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
 
-        // 🔹 Botão perfil
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
@@ -103,6 +101,7 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
+
               child: ValueListenableBuilder<List<PatientModel>>(
                 valueListenable: controller.pacientes,
                 builder: (context, pacientes, _) {
@@ -149,7 +148,7 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
   }
 
   // ============================================================
-  // UI COMPONENTS
+  // 🔹 CARD DE PACIENTE (AGORA COM BOTÃO DE MURAL)
   // ============================================================
 
   Widget _cardPaciente(PatientModel paciente) {
@@ -169,31 +168,61 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
                 backgroundColor: AppColors.blueLogo.withOpacity(0.1),
                 child: const Icon(Icons.person, color: Colors.black54),
               ),
+
               title: Text(
                 paciente.nome,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: Text(paciente.email),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
 
-              // 🔥 QUANDO CLICAR: abrir calendário do paciente
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PatientCalendarView(
-                      pacienteId: paciente.id,
-                      pacienteNome: paciente.nome,
-                    ),
+              subtitle: Text(paciente.email),
+
+              // ⭐ AQUI ENTRA O NOVO TRAILING ⭐
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 🔵 abrir mural
+                  IconButton(
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    color: AppColors.blueLogo,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProfessionalMuralView(
+                            pacienteId: paciente.id,
+                            pacienteNome: paciente.nome,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+
+                  // ➜ seta de "ver calendário"
+                  IconButton(
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    color: Colors.black87,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatientCalendarView(
+                            pacienteId: paciente.id,
+                            pacienteNome: paciente.nome,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  // ============================================================
 
   Widget _buildBackground() {
     return Stack(

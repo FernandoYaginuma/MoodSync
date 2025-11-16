@@ -3,7 +3,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:android2/Controller/home_controller.dart';
 import 'package:android2/Model/day_model.dart';
 import 'package:android2/theme/colors.dart';
-import 'package:android2/View/patient_profile_view.dart'; // ✅ PERFIL DO PACIENTE
+import 'package:android2/View/patient_profile_view.dart';
+import 'package:android2/View/patient_mural_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -28,24 +29,19 @@ class _HomeViewState extends State<HomeView> {
       backgroundColor: AppColors.blankBackground,
 
       // ================================
-      // 🔵 APPBAR CORRIGIDO
+      // APP BAR
       // ================================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.blueLogo,
         elevation: 0,
-
         title: Row(
           children: [
-            // 🔹 LOGOUT (ESQUERDA)
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
               onPressed: () => controller.logout(context),
             ),
-
             const SizedBox(width: 8),
-
-            // 🔹 PERFIL DO PACIENTE (NÃO MAIS O DO PROFISSIONAL)
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -63,10 +59,7 @@ class _HomeViewState extends State<HomeView> {
                 child: const Icon(Icons.person, color: Colors.white, size: 22),
               ),
             ),
-
             const Spacer(),
-
-            // 🔹 MOODSYNC (DIREITA)
             const Text(
               "MoodSync",
               style: TextStyle(
@@ -80,7 +73,7 @@ class _HomeViewState extends State<HomeView> {
       ),
 
       // ================================
-      // 🔵 CORPO
+      // CORPO
       // ================================
       body: Container(
         decoration: BoxDecoration(
@@ -127,6 +120,8 @@ class _HomeViewState extends State<HomeView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
+                  // Saudação
                   ValueListenableBuilder<String>(
                     valueListenable: controller.nomeUsuario,
                     builder: (context, nome, _) {
@@ -140,8 +135,8 @@ class _HomeViewState extends State<HomeView> {
                       );
                     },
                   ),
-                  const SizedBox(height: 6),
 
+                  const SizedBox(height: 6),
                   Text(
                     'Como você está hoje?',
                     style: TextStyle(
@@ -151,7 +146,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Card do calendário
+                  // CALENDÁRIO RESUMIDO
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -197,6 +192,42 @@ class _HomeViewState extends State<HomeView> {
 
                   const SizedBox(height: 16),
 
+                  // BOTÃO DO MURAL
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.forum_outlined, size: 20),
+                      label: const Text(
+                        "Mensagens do Profissional",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blueLogo,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PatientMuralView(
+                              pacienteId: controller.userId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // REGISTROS RECENTES
                   const Text(
                     'Registros Recentes:',
                     style: TextStyle(
@@ -207,12 +238,12 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Lista de registros
                   Expanded(
                     child: StreamBuilder<Map<String, DayModel>>(
                       stream: controller.getRegistrosStream(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
