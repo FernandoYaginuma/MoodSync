@@ -18,11 +18,19 @@ class ProfessionalModel {
   factory ProfessionalModel.fromJson(String id, Map<String, dynamic> json) {
     return ProfessionalModel(
       id: id,
-      name: json['name'] ?? 'Nome não informado',
-      specialty: json['specialty'] ?? 'Especialidade não informada',
-      crp: json['crp'] ?? '',
-      phone: json['telefone'] ?? '',
-      city: json['cidade'] ?? '',
+      name: (json['nome'] ?? 'Nome não informado').toString(),
+      specialty: (json['especialidade'] ?? 'Especialidade não informada').toString(),
+      crp: (json['registroProfissional'] ?? '').toString(),
+      phone: (json['telefone'] ?? '').toString(),
+      city: (json['cidade'] ?? '').toString(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'nome': name,
+    'especialidade': specialty,
+    'registroProfissional': crp,
+    'telefone': phone,
+    'cidade': city,
+  };
 }

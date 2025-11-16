@@ -5,7 +5,6 @@ import 'firebase_options.dart';
 
 import 'package:android2/View/calendar_view.dart';
 import 'package:android2/View/day_view.dart';
-import 'package:android2/View/professional_view.dart';
 import 'package:android2/View/login_view.dart';
 import 'package:android2/View/register_view.dart';
 import 'package:android2/View/forgot_password_view.dart';
@@ -49,15 +48,14 @@ class MyApp extends StatelessWidget {
         '/about': (context) => AboutView(),
         '/calendar': (context) {
           final SelectedDate =
-              ModalRoute.of(context)!.settings.arguments as DateTime;
+          ModalRoute.of(context)!.settings.arguments as DateTime;
           return CalendarView(initialDate: SelectedDate);
         },
         '/day': (context) {
           final selectedDate =
-              ModalRoute.of(context)!.settings.arguments as DateTime;
+          ModalRoute.of(context)!.settings.arguments as DateTime;
           return DayView(selectedDate: selectedDate);
         },
-        '/professional': (context) => const ProfessionalView(),
         '/home': (context) => const HomeView(),
       },
     );

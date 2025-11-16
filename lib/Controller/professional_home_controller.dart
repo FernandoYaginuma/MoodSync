@@ -30,7 +30,6 @@ class ProfessionalHomeController {
         return;
       }
 
-      // Buscar dados reais dos pacientes
       final snap = await _firestore
           .collection('users')
           .where(FieldPath.documentId, whereIn: ids)
@@ -45,11 +44,7 @@ class ProfessionalHomeController {
 
   // ============================================================
   // 🔵 ADICIONAR PACIENTE AO PROFISSIONAL
-  // - verifica e-mail
-  // - verifica role = paciente
-  // - verifica se existe
-  // - impede duplicação
-  // - impede > 2 profissionais
+  // (corrigido com atualização no users/)
   // ============================================================
   Future<String?> adicionarPaciente(
       String profissionalId, String email) async {
@@ -74,16 +69,18 @@ class ProfessionalHomeController {
           .doc(pacienteId)
           .get();
 
-      List<dynamic> profissionais =
+      List<dynamic> profissionaisExistentes =
           pacienteDoc.data()?["profissionais"] ?? [];
 
       // 🔥 LIMITE DE 2 PROFISSIONAIS
-      if (profissionais.length >= 2 &&
-          !profissionais.contains(profissionalId)) {
+      if (profissionaisExistentes.length >= 2 &&
+          !profissionaisExistentes.contains(profissionalId)) {
         return "Este paciente já está vinculado ao máximo de 2 profissionais.";
       }
 
-      // 3 ▸ Atualizar profissional → paciente
+      // ======================================================
+      // 3 ▸ Atualizar profissional → pacientes
+      // ======================================================
       final profRef =
       _firestore.collection("profissional_pacientes").doc(profissionalId);
 
@@ -96,17 +93,16 @@ class ProfessionalHomeController {
           });
         } else {
           List<dynamic> lista = doc.data()?["pacientes"] ?? [];
-          if (!lista.contains(pacienteId)) {
-            lista.add(pacienteId);
-          }
+          if (!lista.contains(pacienteId)) lista.add(pacienteId);
           tx.update(profRef, {"pacientes": lista});
         }
       });
 
+      // ======================================================
       // 4 ▸ Atualizar paciente → profissionais
-      final pacienteRef = _firestore
-          .collection("paciente_profissionais")
-          .doc(pacienteId);
+      // ======================================================
+      final pacienteRef =
+      _firestore.collection("paciente_profissionais").doc(pacienteId);
 
       await _firestore.runTransaction((tx) async {
         final doc = await tx.get(pacienteRef);
@@ -117,12 +113,19 @@ class ProfessionalHomeController {
           });
         } else {
           List<dynamic> lista = doc.data()?["profissionais"] ?? [];
-          if (!lista.contains(profissionalId)) {
-            lista.add(profissionalId);
-          }
+          if (!lista.contains(profissionalId)) lista.add(profissionalId);
           tx.update(pacienteRef, {"profissionais": lista});
         }
       });
+
+      // ======================================================
+      // 5 ▸ 🔥 ATUALIZA O DOCUMENTO USERS/{pacienteId}
+      // (É AQUI QUE FALTAVA!!!)
+      // ======================================================
+      await _firestore.collection("users").doc(pacienteId).set({
+        "profissionaisVinculados":
+        FieldValue.arrayUnion([profissionalId]),
+      }, SetOptions(merge: true));
 
       return null; // ✔ sucesso
     } catch (e) {

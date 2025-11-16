@@ -30,21 +30,26 @@ class RegisterController {
 
     try {
       final credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
       );
 
       final user = credential.user;
       if (user != null) {
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
           'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
           'telefone': telefoneController.text.trim(),
           'dataNascimento': dataNascimentoSelecionada != null
               ? Timestamp.fromDate(dataNascimentoSelecionada!)
               : null,
-          'sexo': sexoSelecionado,
+          'sexo': sexoSelecionado ?? "Prefiro não informar",
+          'role': 'paciente',
+          'profissionaisVinculados': [], // ⭐ já começa vazio
           'createdAt': FieldValue.serverTimestamp(),
         });
       }

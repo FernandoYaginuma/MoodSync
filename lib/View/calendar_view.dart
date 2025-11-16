@@ -23,7 +23,6 @@ class _CalendarViewState extends State<CalendarView> {
     final safeInitialDate = widget.initialDate ?? DateTime.now();
     controller = CalendarController(initialDate: safeInitialDate);
 
-    // Carrega registros iniciais e redesenha quando terminar
     controller.carregarRegistros().then((_) {
       if (mounted) setState(() {});
     });
@@ -90,12 +89,14 @@ class _CalendarViewState extends State<CalendarView> {
         children: [
           _calendarCard(),
           const SizedBox(height: 24),
+
+          /// -------- DIA SELECIONADO --------
           ValueListenableBuilder<DateTime?>(
             valueListenable: controller.selectedDay,
             builder: (context, selectedDay, _) {
-              final safeSelected = selectedDay ?? DateTime.now();
+              final d = selectedDay ?? DateTime.now();
               return Text(
-                'Dia selecionado: ${safeSelected.day.toString().padLeft(2, '0')}/${safeSelected.month.toString().padLeft(2, '0')}/${safeSelected.year}',
+                'Dia selecionado: ${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -103,24 +104,6 @@ class _CalendarViewState extends State<CalendarView> {
                 ),
               );
             },
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 45,
-            width: 240,
-            child: ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/professional'),
-              icon: const Icon(Icons.group_add_outlined),
-              label: const Text('Adicionar profissional'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.blueLogo,
-                foregroundColor: AppColors.fontLogo,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-              ),
-            ),
           ),
         ],
       ),
@@ -170,7 +153,6 @@ class _CalendarViewState extends State<CalendarView> {
               ),
             ),
 
-            // MARCADORES COLORIDOS DAS EMOÇÕES
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, date, _) {
                 final emotion = controller.emotionOfDay(date);
@@ -203,7 +185,6 @@ class _CalendarViewState extends State<CalendarView> {
                 ),
               );
 
-              // Se salvou o dia, recarrega registros e redesenha
               if (result == true) {
                 await controller.carregarRegistros();
                 if (mounted) setState(() {});

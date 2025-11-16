@@ -23,6 +23,10 @@ class _PatientProfileViewState extends State<PatientProfileView> {
   Future<void> _iniciar() async {
     await controller.carregarDados();
     if (mounted) setState(() => carregando = false);
+
+    controller.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -40,10 +44,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
             color: Colors.white,
             fontWeight: FontWeight.bold,
             shadows: [
-              Shadow(
-                color: Colors.black26,
-                blurRadius: 4,
-              )
+              Shadow(color: Colors.black26, blurRadius: 4)
             ],
           ),
         ),
@@ -62,8 +63,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
   }
 
   // ------------------------------------------------------------
-  // 🌈 FUNDO COM GRADIENTE + BOLHAS
-  // ------------------------------------------------------------
+
   Widget _buildBackground() {
     return Stack(
       children: [
@@ -79,7 +79,6 @@ class _PatientProfileViewState extends State<PatientProfileView> {
             ),
           ),
         ),
-
         Positioned(
           top: -40,
           left: -30,
@@ -103,14 +102,12 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     return Container(
       width: size,
       height: size,
-      decoration:
-      BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
   // ------------------------------------------------------------
-  // 🧊 CONTEÚDO CENTRAL
-  // ------------------------------------------------------------
+
   Widget _buildContent() {
     return SafeArea(
       child: SingleChildScrollView(
@@ -124,38 +121,51 @@ class _PatientProfileViewState extends State<PatientProfileView> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.90),
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  )
-                ],
               ),
 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // ===== CAMPOS DO PERFIL =====
                   _input(controller.nomeController, "Nome"),
                   const SizedBox(height: 14),
-
-                  _input(controller.emailController, "E-mail",
-                      enabled: false),
+                  _input(controller.emailController, "E-mail", enabled: false),
                   const SizedBox(height: 14),
-
                   _input(controller.telefoneController, "Telefone",
                       type: TextInputType.phone),
                   const SizedBox(height: 14),
-
                   _input(controller.dataNascController,
                       "Data de nascimento (dd/mm/aaaa)",
                       type: TextInputType.datetime),
                   const SizedBox(height: 14),
-
                   _sexoDropdown(),
                   const SizedBox(height: 26),
-
                   _botaoSalvar(),
+
+                  const SizedBox(height: 35),
+
+                  // ==========================================
+                  //   SEÇÃO — PROFISSIONAIS VINCULADOS
+                  // ==========================================
+                  const Text(
+                    "Profissionais vinculados",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blackBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (controller.profissionaisVinculados.isEmpty)
+                    const Text(
+                      "Você não possui profissionais vinculados.",
+                      style: TextStyle(color: Colors.black54),
+                    ),
+
+                  ...controller.profissionaisVinculados
+                      .map((p) => _cardProfissional(p))
+                      .toList(),
                 ],
               ),
             ),
@@ -166,8 +176,91 @@ class _PatientProfileViewState extends State<PatientProfileView> {
   }
 
   // ------------------------------------------------------------
-  // ✏ INPUT PADRÃO ESTILIZADO
+
+  Widget _cardProfissional(prof) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.06),
+          )
+        ],
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            prof.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: AppColors.blackBackground,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(prof.specialty, style: TextStyle(color: Colors.grey[700])),
+          Text("CRP: ${prof.crp}", style: TextStyle(color: Colors.grey[700])),
+
+          const SizedBox(height: 14),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
+                foregroundColor: Colors.red,
+              ),
+              onPressed: () => _confirmarDesvincular(prof),
+              child: const Text("Desvincular"),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   // ------------------------------------------------------------
+
+  void _confirmarDesvincular(prof) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Remover profissional"),
+        content: Text(
+            "Tem certeza que deseja desvincular de ${prof.name}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await controller.desvincular(prof.id);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("${prof.name} desvinculado.")),
+              );
+            },
+            child: const Text(
+              "Desvincular",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+
   Widget _input(TextEditingController controller, String label,
       {bool enabled = true, TextInputType type = TextInputType.text}) {
     return TextField(
@@ -176,14 +269,8 @@ class _PatientProfileViewState extends State<PatientProfileView> {
       keyboardType: type,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          color: Colors.grey.shade800,
-          fontWeight: FontWeight.w500,
-        ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -191,9 +278,6 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     );
   }
 
-  // ------------------------------------------------------------
-  // ⚧ DROPDOWN SEXO
-  // ------------------------------------------------------------
   Widget _sexoDropdown() {
     return DropdownButtonFormField<String>(
       value: controller.sexoSelecionado,
@@ -206,8 +290,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
           child: Text("Prefiro não informar"),
         ),
       ],
-      onChanged: (v) =>
-          setState(() => controller.sexoSelecionado = v!),
+      onChanged: (v) => setState(() => controller.sexoSelecionado = v!),
       decoration: InputDecoration(
         labelText: "Sexo",
         filled: true,
@@ -219,9 +302,6 @@ class _PatientProfileViewState extends State<PatientProfileView> {
     );
   }
 
-  // ------------------------------------------------------------
-  // 💾 BOTÃO SALVAR
-  // ------------------------------------------------------------
   Widget _botaoSalvar() {
     return ElevatedButton(
       onPressed: () async {
@@ -230,10 +310,7 @@ class _PatientProfileViewState extends State<PatientProfileView> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                erro ?? "Dados salvos com sucesso!"),
-          ),
+          SnackBar(content: Text(erro ?? "Dados salvos com sucesso!")),
         );
       },
       style: ElevatedButton.styleFrom(
@@ -243,15 +320,10 @@ class _PatientProfileViewState extends State<PatientProfileView> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
         ),
-        shadowColor: Colors.black54,
-        elevation: 3,
       ),
       child: const Text(
         "Salvar alterações",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 17,
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
       ),
     );
   }
