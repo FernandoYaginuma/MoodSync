@@ -5,12 +5,19 @@ import 'package:android2/Model/day_model.dart';
 
 class DayController extends ChangeNotifier {
   final DayModel day;
+
+  /// ✅ novo: se true, não deixa alterar emoções
+  final bool lockEmotions;
+
   bool isLoading = false;
 
-  DayController({required this.day});
+  DayController({
+    required this.day,
+    this.lockEmotions = false,
+  });
 
-  /// Define a lista completa de sentimentos (máx. 3)
   void setEmotions(List<String> emotions) {
+    if (lockEmotions) return; // ✅ trava
     if (emotions.length > 3) {
       day.emotions = emotions.take(3).toList();
     } else {
@@ -19,8 +26,8 @@ class DayController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Atalho: adiciona/remove um sentimento (respeitando limite)
   void toggleEmotion(String feeling) {
+    if (lockEmotions) return; // ✅ trava
     if (day.emotions.contains(feeling)) {
       day.emotions.remove(feeling);
     } else {

@@ -27,12 +27,17 @@ class _DayViewState extends State<DayView> {
     _initialDataFuture = _fetchInitialData();
   }
 
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   Future<Map<String, dynamic>> _fetchInitialData() async {
     final user = FirebaseAuth.instance.currentUser;
+    final safeDate = _dateOnly(widget.selectedDate);
+
     DayModel dayModel;
+    bool jaSalvo = false;
 
     if (user != null) {
-      final docId = DayModel(date: widget.selectedDate).formattedDate;
+      final docId = DayModel(date: safeDate).formattedDate;
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -40,23 +45,29 @@ class _DayViewState extends State<DayView> {
           .doc(docId);
 
       final docSnapshot = await docRef.get();
+      jaSalvo = docSnapshot.exists;
+
       if (docSnapshot.exists) {
         dayModel = DayModel.fromFirestore(docSnapshot);
       } else {
-        dayModel = DayModel(date: widget.selectedDate);
+        dayModel = DayModel(date: safeDate);
       }
     } else {
-      dayModel = DayModel(date: widget.selectedDate);
+      dayModel = DayModel(date: safeDate);
     }
 
     final activitiesSnapshot =
-    await FirebaseFirestore.instance.collection('activities').get();
+        await FirebaseFirestore.instance.collection('activities').get();
 
     final activities = activitiesSnapshot.docs
         .map((doc) => ActivityModel.fromFirestore(doc.data(), doc.id))
         .toList();
 
-    return {'dayModel': dayModel, 'activities': activities};
+    return {
+      'dayModel': dayModel,
+      'activities': activities,
+      'jaSalvo': jaSalvo,
+    };
   }
 
   @override
@@ -80,13 +91,15 @@ class _DayViewState extends State<DayView> {
           );
         }
 
-        final DayModel initialDay = snapshot.data!['dayModel'];
+        final DayModel initialDay = snapshot.data!['dayModel'] as DayModel;
         final List<ActivityModel> availableActivities =
-        snapshot.data!['activities'];
+            snapshot.data!['activities'] as List<ActivityModel>;
+        final bool jaSalvo = snapshot.data!['jaSalvo'] as bool;
 
         return DayViewContent(
           initialDay: initialDay,
           availableActivities: availableActivities,
+          jaSalvo: jaSalvo,
         );
       },
     );
@@ -101,10 +114,14 @@ class DayViewContent extends StatefulWidget {
   final DayModel initialDay;
   final List<ActivityModel> availableActivities;
 
+  /// ✅ novo: se true, sentimentos não podem ser alterados
+  final bool jaSalvo;
+
   const DayViewContent({
     super.key,
     required this.initialDay,
     required this.availableActivities,
+    required this.jaSalvo,
   });
 
   @override
@@ -115,11 +132,16 @@ class _DayViewContentState extends State<DayViewContent> {
   late final DayController _controller;
   late final TextEditingController _muralController;
 
+  late bool _emotionsLocked;
+
   @override
   void initState() {
     super.initState();
     _controller = DayController(day: widget.initialDay);
     _muralController = TextEditingController(text: widget.initialDay.note);
+
+    _emotionsLocked = widget.jaSalvo;
+
     _controller.addListener(() {
       if (mounted) setState(() {});
     });
@@ -132,19 +154,23 @@ class _DayViewContentState extends State<DayViewContent> {
     super.dispose();
   }
 
-  // 🔴 AQUI É O PULO DO GATO: volta pro calendário retornando TRUE
   Future<void> _salvar() async {
     await _controller.salvar(_muralController.text);
     if (!mounted) return;
+
+    // ✅ depois de salvar, trava sentimentos (extra segurança, mesmo que volte)
+    _emotionsLocked = true;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Salvo com sucesso!')),
     );
 
-    Navigator.pop(context, true); // 👈 sinaliza pro calendário recarregar
+    Navigator.pop(context, true);
   }
 
   void _escolherSentimento() async {
+    if (_emotionsLocked) return; // ✅ trava
+
     final emotions = await Navigator.push<List<String>>(
       context,
       MaterialPageRoute(
@@ -155,14 +181,17 @@ class _DayViewContentState extends State<DayViewContent> {
     );
 
     if (emotions != null) {
+      // ✅ só aplica se não estiver travado
+      if (_emotionsLocked) return;
       _controller.setEmotions(emotions);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final d = widget.initialDay.date;
     final dateFormatted =
-        "${widget.initialDay.date.day.toString().padLeft(2, '0')}/${widget.initialDay.date.month.toString().padLeft(2, '0')}/${widget.initialDay.date.year}";
+        "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
 
     return Scaffold(
       appBar: AppBar(
@@ -183,7 +212,6 @@ class _DayViewContentState extends State<DayViewContent> {
       ),
       body: Stack(
         children: [
-          // Fundo decorativo
           Positioned(
             top: -60,
             left: -40,
@@ -208,16 +236,12 @@ class _DayViewContentState extends State<DayViewContent> {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ==========================
-                  //   Emoções selecionadas
-                  // ==========================
                   if (_controller.day.emotions.isNotEmpty)
                     Wrap(
                       spacing: 10,
@@ -238,9 +262,6 @@ class _DayViewContentState extends State<DayViewContent> {
 
                   const SizedBox(height: 18),
 
-                  // ==========================
-                  //   Atividades
-                  // ==========================
                   const Text(
                     "Atividades do Dia",
                     style: TextStyle(
@@ -253,9 +274,6 @@ class _DayViewContentState extends State<DayViewContent> {
 
                   const SizedBox(height: 28),
 
-                  // ==========================
-                  //   Mural
-                  // ==========================
                   const Text(
                     "Descreva seu dia",
                     style: TextStyle(
@@ -271,9 +289,13 @@ class _DayViewContentState extends State<DayViewContent> {
                   SizedBox(
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: _escolherSentimento,
+                      onPressed: _emotionsLocked ? null : _escolherSentimento,
                       icon: const Icon(Icons.mood),
-                      label: const Text("Escolher sentimentos"),
+                      label: Text(
+                        _emotionsLocked
+                            ? "Sentimentos já registrados"
+                            : "Escolher sentimentos",
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.fontLogo.withOpacity(0.12),
                         foregroundColor: AppColors.fontLogo,
@@ -283,6 +305,14 @@ class _DayViewContentState extends State<DayViewContent> {
                       ),
                     ),
                   ),
+
+                  if (_emotionsLocked) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Os sentimentos desse dia já foram salvos e não podem ser alterados.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
 
                   const SizedBox(height: 12),
 
@@ -305,7 +335,6 @@ class _DayViewContentState extends State<DayViewContent> {
               ),
             ),
           ),
-
           if (_controller.isLoading)
             Container(
               color: Colors.black.withOpacity(0.4),
