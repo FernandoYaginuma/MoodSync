@@ -23,13 +23,29 @@ class _PatientDayViewState extends State<PatientDayView> {
   DayModel? day;
   bool carregando = true;
 
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  String _fmtDate(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+
+  String _fmtDateTime(DateTime d) {
+    final dd = _fmtDate(d);
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return "$dd $hh:$mm";
+  }
+
   @override
   void initState() {
     super.initState();
+
+    final safeDate = _dateOnly(widget.date);
+
     controller = PatientDayController(
       pacienteId: widget.pacienteId,
-      data: widget.date,
+      data: safeDate, // ✅ sem hora, sem UTC
     );
+
     carregar();
   }
 
@@ -45,17 +61,16 @@ class _PatientDayViewState extends State<PatientDayView> {
 
   @override
   Widget build(BuildContext context) {
+    final safeDate = _dateOnly(widget.date);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
         title: Text(
-          "${widget.date.day.toString().padLeft(2, '0')}/"
-              "${widget.date.month.toString().padLeft(2, '0')}/"
-              "${widget.date.year}",
+          _fmtDate(safeDate), // ✅ sempre data “pura”
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -63,75 +78,71 @@ class _PatientDayViewState extends State<PatientDayView> {
         ),
         centerTitle: true,
       ),
-
       body: carregando
           ? const Center(child: CircularProgressIndicator())
           : Stack(
-        children: [
-          _buildBackground(),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.88),
+              children: [
+                _buildBackground(),
+                SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _secaoTitulo("Sentimentos"),
-                        _caixa(
-                          (day?.emotions.isNotEmpty ?? false)
-                              ? day!.emotions.join(', ')
-                              : "Sem sentimentos registrados",
-                        ),
-
-                        const SizedBox(height: 24),
-                        _secaoTitulo("Anotação"),
-                        _caixa(
-                          (day?.note.trim().isNotEmpty ?? false)
-                              ? day!.note
-                              : "Sem anotação registrada",
-                        ),
-
-                        if (day?.activityIds.isNotEmpty == true) ...[
-                          const SizedBox(height: 24),
-                          _secaoTitulo("Atividades"),
-                          _caixa(day!.activityIds.join(", ")),
-                        ],
-
-                        if (day?.lastUpdatedAt != null) ...[
-                          const SizedBox(height: 28),
-                          Text(
-                            "Última atualização: ${day!.lastUpdatedAt}",
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 14,
-                            ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        child: Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.88),
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ],
-                      ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _secaoTitulo("Sentimentos"),
+                              _caixa(
+                                (day?.emotions.isNotEmpty ?? false)
+                                    ? day!.emotions.join(', ')
+                                    : "Sem sentimentos registrados",
+                              ),
+                              const SizedBox(height: 24),
+                              _secaoTitulo("Anotação"),
+                              _caixa(
+                                (day?.note.trim().isNotEmpty ?? false)
+                                    ? day!.note
+                                    : "Sem anotação registrada",
+                              ),
+                              if (day?.activityIds.isNotEmpty == true) ...[
+                                const SizedBox(height: 24),
+                                _secaoTitulo("Atividades"),
+                                _caixa(day!.activityIds.join(", ")),
+                              ],
+                              if (day?.lastUpdatedAt != null) ...[
+                                const SizedBox(height: 28),
+                                Text(
+                                  "Última atualização: ${_fmtDateTime(day!.lastUpdatedAt!)}",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -41,7 +41,7 @@ class _DayViewState extends State<DayView> {
 
       final docSnapshot = await docRef.get();
       if (docSnapshot.exists) {
-        dayModel = DayModel.fromJson(docSnapshot.data()!);
+        dayModel = DayModel.fromFirestore(docSnapshot);
       } else {
         dayModel = DayModel(date: widget.selectedDate);
       }

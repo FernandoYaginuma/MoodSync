@@ -42,8 +42,8 @@ class CalendarController {
     _registros.clear();
 
     for (var doc in snapshot.docs) {
-      final day = DayModel.fromJson(doc.data());
-      _registros[day.formattedDate] = day;
+      final day = DayModel.fromFirestore(doc);
+     _registros[doc.id] = day;
     }
   }
 

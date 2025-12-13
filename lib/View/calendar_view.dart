@@ -17,11 +17,13 @@ class CalendarView extends StatefulWidget {
 class _CalendarViewState extends State<CalendarView> {
   late CalendarController controller;
 
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   @override
   void initState() {
     super.initState();
 
-    final safeInitialDate = widget.initialDate ?? DateTime.now();
+    final safeInitialDate = _dateOnly(widget.initialDate ?? DateTime.now());
     controller = CalendarController(initialDate: safeInitialDate);
 
     controller.carregarRegistros().then((_) {
@@ -95,7 +97,7 @@ class _CalendarViewState extends State<CalendarView> {
           ValueListenableBuilder<DateTime?>(
             valueListenable: controller.selectedDay,
             builder: (context, selectedDay, _) {
-              final d = selectedDay ?? DateTime.now();
+              final d = _dateOnly(selectedDay ?? DateTime.now());
               return Text(
                 'Dia selecionado: ${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}',
                 style: const TextStyle(
@@ -131,17 +133,21 @@ class _CalendarViewState extends State<CalendarView> {
       child: ValueListenableBuilder<DateTime>(
         valueListenable: controller.focusedDay,
         builder: (context, focusedDay, _) {
-          final safeFocused = focusedDay;
-          final safeSelected = controller.selectedDay.value ?? safeFocused;
+          final safeFocused = _dateOnly(focusedDay);
+          final safeSelected =
+              _dateOnly(controller.selectedDay.value ?? safeFocused);
 
           return TableCalendar(
-            locale: 'pt_BR', // 🔵 AGORA O CALENDÁRIO FICA EM PORTUGUÊS
+            locale: 'pt_BR',
 
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
+            // ✅ NÃO use UTC aqui (isso é o que costuma causar "dia anterior")
+            firstDay: DateTime(2020, 1, 1),
+            lastDay: DateTime(2030, 12, 31),
+
             focusedDay: safeFocused,
 
-            selectedDayPredicate: (day) => isSameDay(safeSelected, day),
+            selectedDayPredicate: (day) =>
+                isSameDay(safeSelected, _dateOnly(day)),
 
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
@@ -161,7 +167,8 @@ class _CalendarViewState extends State<CalendarView> {
 
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, date, _) {
-                final emotion = controller.emotionOfDay(date);
+                // ✅ normaliza também no marker
+                final emotion = controller.emotionOfDay(_dateOnly(date));
                 if (emotion == null) return const SizedBox();
 
                 final color = EmotionUtils.emotionColor(emotion);
@@ -180,15 +187,19 @@ class _CalendarViewState extends State<CalendarView> {
               },
             ),
 
-            // Quando o usuário escolher um dia
             onDaySelected: (selectedDay, focusedDay) async {
-              controller.selectedDay.value = selectedDay;
-              controller.focusedDay.value = focusedDay;
+              // ✅ sempre salva no controller sem hora
+              final selected = _dateOnly(selectedDay);
+              final focused = _dateOnly(focusedDay);
+
+              controller.selectedDay.value = selected;
+              controller.focusedDay.value = focused;
 
               final result = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => DayView(selectedDate: selectedDay),
+                  // ✅ passa para o DayView sem hora (evita docId errado)
+                  builder: (_) => DayView(selectedDate: selected),
                 ),
               );
 
@@ -199,7 +210,8 @@ class _CalendarViewState extends State<CalendarView> {
             },
 
             onPageChanged: (focusedDay) {
-              controller.onPageChanged(focusedDay);
+              final focused = _dateOnly(focusedDay);
+              controller.onPageChanged(focused);
               controller.carregarRegistros().then((_) {
                 if (mounted) setState(() {});
               });

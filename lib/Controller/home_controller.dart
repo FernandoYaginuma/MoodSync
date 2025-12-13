@@ -39,8 +39,8 @@ class HomeController {
     return snapshots.map((querySnapshot) {
       final Map<String, DayModel> days = {};
       for (var doc in querySnapshot.docs) {
-        final day = DayModel.fromJson(doc.data());
-        days[day.formattedDate] = day;
+        final day = DayModel.fromFirestore(doc);
+        days[doc.id] = day;
       }
       return days;
     });

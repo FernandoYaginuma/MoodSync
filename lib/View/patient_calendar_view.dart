@@ -24,24 +24,25 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
   late PatientCalendarController controller;
   DateTime _focusedDay = DateTime.now();
 
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   @override
   void initState() {
     super.initState();
     controller = PatientCalendarController(widget.pacienteId);
+    _focusedDay = _dateOnly(DateTime.now());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         title: Text("Registros de ${widget.pacienteNome}"),
         backgroundColor: AppColors.blueLogo,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -60,30 +61,47 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                 ],
               ),
               child: TableCalendar(
-                firstDay: DateTime.utc(2020),
-                lastDay: DateTime.utc(2030),
-                focusedDay: _focusedDay,
+                // ✅ NÃO use UTC aqui (evita "dia anterior" por fuso)
+                firstDay: DateTime(2020, 1, 1),
+                lastDay: DateTime(2030, 12, 31),
+
+                focusedDay: _dateOnly(_focusedDay),
+
                 calendarFormat: CalendarFormat.month,
                 headerStyle: const HeaderStyle(
                   titleCentered: true,
                   formatButtonVisible: false,
                 ),
+
                 onDaySelected: (selected, focused) {
+                  final selectedLocal = _dateOnly(selected);
+                  final focusedLocal = _dateOnly(focused);
+
+                  setState(() {
+                    _focusedDay = focusedLocal;
+                  });
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      // ✅ passa SEM hora pro PatientDayView
                       builder: (_) => PatientDayView(
                         pacienteId: widget.pacienteId,
-                        date: selected,
+                        date: selectedLocal,
                       ),
                     ),
                   );
                 },
-                selectedDayPredicate: (day) => false,
-                onPageChanged: (focused) => _focusedDay = focused,
+
+                selectedDayPredicate: (_) => false,
+
+                onPageChanged: (focused) {
+                  setState(() {
+                    _focusedDay = _dateOnly(focused);
+                  });
+                },
               ),
             ),
-
             const SizedBox(height: 20),
 
             SizedBox(
@@ -144,8 +162,9 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                     itemBuilder: (context, i) {
                       final day = lista[i];
 
+                      final d = _dateOnly(day.date);
                       final date =
-                          "${day.date.day.toString().padLeft(2, '0')}/${day.date.month}/${day.date.year}";
+                          "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
 
                       final emotionsText = day.emotions.isEmpty
                           ? "Sem sentimentos"
@@ -184,7 +203,8 @@ class _PatientCalendarViewState extends State<PatientCalendarView> {
                               MaterialPageRoute(
                                 builder: (_) => PatientDayView(
                                   pacienteId: widget.pacienteId,
-                                  date: day.date,
+                                  // ✅ também passa SEM hora
+                                  date: _dateOnly(day.date),
                                 ),
                               ),
                             );

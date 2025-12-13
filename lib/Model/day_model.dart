@@ -22,16 +22,19 @@ class DayModel {
   // Converter para Firestore
   // ------------------------------------------------------------
   Map<String, dynamic> toJson() {
-    return {
-      'date': Timestamp.fromDate(date),
-      'note': note,
-      'emotions': emotions,
-      'professionalId': professionalId,
-      'lastUpdatedAt':
-      lastUpdatedAt != null ? Timestamp.fromDate(lastUpdatedAt!) : null,
-      'activityIds': activityIds,
-    };
-  }
+  final dateOnlyLocal = DateTime(date.year, date.month, date.day);
+
+  return {
+    'date': Timestamp.fromDate(dateOnlyLocal),
+    'note': note,
+    'emotions': emotions,
+    'professionalId': professionalId,
+    'lastUpdatedAt':
+        lastUpdatedAt != null ? Timestamp.fromDate(lastUpdatedAt!) : null,
+    'activityIds': activityIds,
+  };
+}
+
 
   // ------------------------------------------------------------
   // Criar a partir de JSON (compatível com versões antigas)
@@ -58,24 +61,33 @@ class DayModel {
   // Criar DayModel diretamente do Firestore
   // ------------------------------------------------------------
   factory DayModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  final data = doc.data() as Map<String, dynamic>;
 
-    final legacyEmotion = data['emotion'];
-
-    final List<String> emotionsList =
-    data['emotions'] != null
-        ? List<String>.from(data['emotions'])
-        : (legacyEmotion != null ? [legacyEmotion as String] : []);
-
-    return DayModel(
-      date: (data['date'] as Timestamp).toDate(),
-      note: data['note'] ?? '',
-      emotions: emotionsList,
-      professionalId: data['professionalId'],
-      lastUpdatedAt: (data['lastUpdatedAt'] as Timestamp?)?.toDate(),
-      activityIds: List<String>.from(data['activityIds'] ?? []),
-    );
+  DateTime parseDocId(String id) {
+    final parts = id.split('-');
+    if (parts.length != 3) return DateTime.now();
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return DateTime.now();
+    return DateTime(y, m, d); // local, sem hora
   }
+
+  final legacyEmotion = data['emotion'];
+  final List<String> emotionsList = data['emotions'] != null
+      ? List<String>.from(data['emotions'])
+      : (legacyEmotion != null ? [legacyEmotion as String] : []);
+
+  return DayModel(
+    date: parseDocId(doc.id),
+    note: data['note'] ?? '',
+    emotions: emotionsList,
+    professionalId: data['professionalId'],
+    lastUpdatedAt: (data['lastUpdatedAt'] as Timestamp?)?.toDate(),
+    activityIds: List<String>.from(data['activityIds'] ?? []),
+  );
+}
+
 
   // ------------------------------------------------------------
   // Helper: ID do documento
