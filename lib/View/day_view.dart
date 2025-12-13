@@ -114,7 +114,7 @@ class DayViewContent extends StatefulWidget {
   final DayModel initialDay;
   final List<ActivityModel> availableActivities;
 
-  /// ✅ novo: se true, sentimentos não podem ser alterados
+  /// ✅ se true, sentimentos e anotação não podem ser alterados
   final bool jaSalvo;
 
   const DayViewContent({
@@ -132,15 +132,19 @@ class _DayViewContentState extends State<DayViewContent> {
   late final DayController _controller;
   late final TextEditingController _muralController;
 
-  late bool _emotionsLocked;
+  late bool _sentimentosTravados;
+  late bool _anotacaoTravada;
 
   @override
   void initState() {
     super.initState();
+
     _controller = DayController(day: widget.initialDay);
     _muralController = TextEditingController(text: widget.initialDay.note);
 
-    _emotionsLocked = widget.jaSalvo;
+    // ✅ travar sentimentos + anotação se já existe doc
+    _sentimentosTravados = widget.jaSalvo;
+    _anotacaoTravada = widget.jaSalvo;
 
     _controller.addListener(() {
       if (mounted) setState(() {});
@@ -158,8 +162,9 @@ class _DayViewContentState extends State<DayViewContent> {
     await _controller.salvar(_muralController.text);
     if (!mounted) return;
 
-    // ✅ depois de salvar, trava sentimentos (extra segurança, mesmo que volte)
-    _emotionsLocked = true;
+    // ✅ depois de salvar, trava sentimentos e anotação na sessão atual
+    _sentimentosTravados = true;
+    _anotacaoTravada = true;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Salvo com sucesso!')),
@@ -169,7 +174,7 @@ class _DayViewContentState extends State<DayViewContent> {
   }
 
   void _escolherSentimento() async {
-    if (_emotionsLocked) return; // ✅ trava
+    if (_sentimentosTravados) return;
 
     final emotions = await Navigator.push<List<String>>(
       context,
@@ -181,8 +186,7 @@ class _DayViewContentState extends State<DayViewContent> {
     );
 
     if (emotions != null) {
-      // ✅ só aplica se não estiver travado
-      if (_emotionsLocked) return;
+      if (_sentimentosTravados) return;
       _controller.setEmotions(emotions);
     }
   }
@@ -236,12 +240,16 @@ class _DayViewContentState extends State<DayViewContent> {
               ),
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // ==========================
+                  //   Emoções selecionadas
+                  // ==========================
                   if (_controller.day.emotions.isNotEmpty)
                     Wrap(
                       spacing: 10,
@@ -262,6 +270,9 @@ class _DayViewContentState extends State<DayViewContent> {
 
                   const SizedBox(height: 18),
 
+                  // ==========================
+                  //   Atividades (ABERTAS)
+                  // ==========================
                   const Text(
                     "Atividades do Dia",
                     style: TextStyle(
@@ -274,6 +285,9 @@ class _DayViewContentState extends State<DayViewContent> {
 
                   const SizedBox(height: 28),
 
+                  // ==========================
+                  //   Anotação (TRAVADA)
+                  // ==========================
                   const Text(
                     "Descreva seu dia",
                     style: TextStyle(
@@ -284,15 +298,27 @@ class _DayViewContentState extends State<DayViewContent> {
                   const SizedBox(height: 10),
                   _buildDescriptionBox(),
 
+                  if (_anotacaoTravada) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      "A anotação desse dia já foi salva e não pode ser alterada.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+
                   const SizedBox(height: 18),
 
+                  // ==========================
+                  //   Sentimentos (TRAVADOS)
+                  // ==========================
                   SizedBox(
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: _emotionsLocked ? null : _escolherSentimento,
+                      onPressed:
+                          _sentimentosTravados ? null : _escolherSentimento,
                       icon: const Icon(Icons.mood),
                       label: Text(
-                        _emotionsLocked
+                        _sentimentosTravados
                             ? "Sentimentos já registrados"
                             : "Escolher sentimentos",
                       ),
@@ -306,7 +332,7 @@ class _DayViewContentState extends State<DayViewContent> {
                     ),
                   ),
 
-                  if (_emotionsLocked) ...[
+                  if (_sentimentosTravados) ...[
                     const SizedBox(height: 8),
                     const Text(
                       "Os sentimentos desse dia já foram salvos e não podem ser alterados.",
@@ -335,6 +361,7 @@ class _DayViewContentState extends State<DayViewContent> {
               ),
             ),
           ),
+
           if (_controller.isLoading)
             Container(
               color: Colors.black.withOpacity(0.4),
@@ -355,7 +382,7 @@ class _DayViewContentState extends State<DayViewContent> {
         return ChoiceChip(
           label: Text(activity.name),
           selected: isSelected,
-          onSelected: (_) => _controller.toggleActivity(activity.id),
+          onSelected: (_) => _controller.toggleActivity(activity.id), // ✅ aberto
           selectedColor: AppColors.blueLogo,
           backgroundColor: Colors.white,
           labelStyle: TextStyle(
@@ -389,6 +416,8 @@ class _DayViewContentState extends State<DayViewContent> {
       child: TextField(
         controller: _muralController,
         maxLines: 6,
+        readOnly: _anotacaoTravada, // ✅ trava edição
+        enableInteractiveSelection: !_anotacaoTravada,
         decoration: const InputDecoration(
           hintText: 'Escreva aqui...',
           border: InputBorder.none,
