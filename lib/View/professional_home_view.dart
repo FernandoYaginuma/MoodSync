@@ -32,6 +32,48 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
     controller.carregarPacientes(widget.profissionalId);
   }
 
+  Future<void> _confirmarDesvinculo(PatientModel paciente) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Desvincular paciente"),
+        content: Text(
+          "Tem certeza que deseja desvincular ${paciente.nome}?\n\n"
+          "O paciente deixará de aparecer na sua lista.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Desvincular"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    final erro = await controller.desvincularPaciente(
+      profissionalId: widget.profissionalId,
+      pacienteId: paciente.id,
+    );
+
+    if (!mounted) return;
+
+    if (erro != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(erro)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Paciente desvinculado com sucesso.")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,8 +126,7 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
 
                   return ListView.builder(
                     itemCount: pacientes.length,
-                    itemBuilder: (_, index) =>
-                        _cardPaciente(pacientes[index]),
+                    itemBuilder: (_, index) => _cardPaciente(pacientes[index]),
                   );
                 },
               ),
@@ -107,7 +148,9 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
               builder: (_) => AddPatientView(
                 profissionalId: widget.profissionalId,
                 profissionalNome: widget.profissionalNome,
-                onPacienteAdicionado: () {},
+                onPacienteAdicionado: () {
+                  controller.carregarPacientes(widget.profissionalId);
+                },
               ),
             ),
           );
@@ -151,25 +194,40 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
               );
             },
           ),
+
+          // ✅ NOVO: menu com opção de desvincular
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == "desvincular") {
+                _confirmarDesvinculo(paciente);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: "desvincular",
+                child: Text("Desvincular"),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBackground() => Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [AppColors.blueLogo.withOpacity(0.85), Colors.white],
-      ),
-    ),
-  );
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.blueLogo.withOpacity(0.85), Colors.white],
+          ),
+        ),
+      );
 
   Widget _mensagemSemPacientes() => const Center(
-    child: Text(
-      "Nenhum paciente vinculado ainda.",
-      textAlign: TextAlign.center,
-    ),
-  );
+        child: Text(
+          "Nenhum paciente vinculado ainda.",
+          textAlign: TextAlign.center,
+        ),
+      );
 }

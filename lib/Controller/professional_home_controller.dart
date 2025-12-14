@@ -46,10 +46,10 @@ class ProfessionalHomeController {
   // 🔔 ENVIAR / REENVIAR SOLICITAÇÃO DE VÍNCULO
   // ============================================================
   Future<String?> adicionarPaciente(
-      String profissionalId,
-      String profissionalNome,
-      String email,
-      ) async {
+    String profissionalId,
+    String profissionalNome,
+    String email,
+  ) async {
     try {
       // 1 ▸ Verifica se o paciente existe
       final snap = await _firestore
@@ -79,6 +79,8 @@ class ProfessionalHomeController {
           "status": "pendente",
           "createdAt": FieldValue.serverTimestamp(),
           "createdBy": "profissional",
+          // opcional (bom pra consistência)
+          "pacienteId": pacienteId,
         });
         return null;
       }
@@ -88,6 +90,7 @@ class ProfessionalHomeController {
         "profissionalId": profissionalId,
         "profissionalNome": profissionalNome,
         "pacienteEmail": email,
+        "pacienteId": pacienteId, // ✅ salva também o id
         "status": "pendente",
         "createdAt": FieldValue.serverTimestamp(),
         "createdBy": "profissional",
@@ -97,6 +100,55 @@ class ProfessionalHomeController {
     } catch (e) {
       debugPrint("❌ Erro ao enviar solicitação: $e");
       return "Erro ao enviar solicitação.";
+    }
+  }
+
+  // ============================================================
+  // ❌ DESVINCULAR PACIENTE (3 coleções)
+  // ============================================================
+  Future<String?> desvincularPaciente({
+    required String profissionalId,
+    required String pacienteId,
+  }) async {
+    try {
+      // 1) Remove do profissional → pacientes
+      final docProf = _firestore
+          .collection("profissional_pacientes")
+          .doc(profissionalId);
+
+      if ((await docProf.get()).exists) {
+        await docProf.update({
+          "pacientes": FieldValue.arrayRemove([pacienteId]),
+        });
+      }
+
+      // 2) Remove do paciente → profissionais
+      final docPaciente =
+          _firestore.collection("paciente_profissionais").doc(pacienteId);
+
+      if ((await docPaciente.get()).exists) {
+        await docPaciente.update({
+          "profissionais": FieldValue.arrayRemove([profissionalId]),
+        });
+      }
+
+      // 3) Remove do users do paciente
+      final userDoc = _firestore.collection("users").doc(pacienteId);
+      if ((await userDoc.get()).exists) {
+        await userDoc.update({
+          "profissionaisVinculados": FieldValue.arrayRemove([profissionalId]),
+        });
+      }
+
+      // 4) Atualiza lista local (UI)
+      final atual = List<PatientModel>.from(pacientes.value);
+      atual.removeWhere((p) => p.id == pacienteId);
+      pacientes.value = atual;
+
+      return null;
+    } catch (e) {
+      debugPrint("❌ Erro ao desvincular paciente: $e");
+      return "Erro ao desvincular paciente.";
     }
   }
 }
