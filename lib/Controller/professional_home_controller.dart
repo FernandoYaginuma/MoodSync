@@ -5,11 +5,11 @@ import 'package:android2/Model/patient_model.dart';
 class ProfessionalHomeController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Lista reativa de pacientes do profissional
+  /// Lista reativa de pacientes já ACEITOS
   final ValueNotifier<List<PatientModel>> pacientes = ValueNotifier([]);
 
   // ============================================================
-  // 🔵 CARREGAR PACIENTES VINCULADOS
+  // 🔵 CARREGAR PACIENTES VINCULADOS (ACEITOS)
   // ============================================================
   Future<void> carregarPacientes(String profissionalId) async {
     try {
@@ -23,7 +23,7 @@ class ProfessionalHomeController {
         return;
       }
 
-      List<dynamic> ids = doc.data()?['pacientes'] ?? [];
+      final List<dynamic> ids = doc.data()?['pacientes'] ?? [];
 
       if (ids.isEmpty) {
         pacientes.value = [];
@@ -43,13 +43,15 @@ class ProfessionalHomeController {
   }
 
   // ============================================================
-  // 🔵 ADICIONAR PACIENTE AO PROFISSIONAL
-  // (corrigido com atualização no users/)
+  // 🔔 ENVIAR / REENVIAR SOLICITAÇÃO DE VÍNCULO
   // ============================================================
   Future<String?> adicionarPaciente(
-      String profissionalId, String email) async {
+      String profissionalId,
+      String profissionalNome,
+      String email,
+      ) async {
     try {
-      // 1 ▸ Buscar usuário pelo e-mail e verificar se é paciente
+      // 1 ▸ Verifica se o paciente existe
       final snap = await _firestore
           .collection("users")
           .where("email", isEqualTo: email)
@@ -63,74 +65,38 @@ class ProfessionalHomeController {
 
       final pacienteId = snap.docs.first.id;
 
-      // 2 ▸ Buscar lista de profissionais já vinculados
-      final pacienteDoc = await _firestore
-          .collection("paciente_profissionais")
-          .doc(pacienteId)
+      // 2 ▸ Verifica se já existe solicitação
+      final existing = await _firestore
+          .collection("vinculacoes")
+          .where("profissionalId", isEqualTo: profissionalId)
+          .where("pacienteEmail", isEqualTo: email)
+          .limit(1)
           .get();
 
-      List<dynamic> profissionaisExistentes =
-          pacienteDoc.data()?["profissionais"] ?? [];
-
-      // 🔥 LIMITE DE 2 PROFISSIONAIS
-      if (profissionaisExistentes.length >= 2 &&
-          !profissionaisExistentes.contains(profissionalId)) {
-        return "Este paciente já está vinculado ao máximo de 2 profissionais.";
+      // 🔁 Se existir → reseta para pendente
+      if (existing.docs.isNotEmpty) {
+        await existing.docs.first.reference.update({
+          "status": "pendente",
+          "createdAt": FieldValue.serverTimestamp(),
+          "createdBy": "profissional",
+        });
+        return null;
       }
 
-      // ======================================================
-      // 3 ▸ Atualizar profissional → pacientes
-      // ======================================================
-      final profRef =
-      _firestore.collection("profissional_pacientes").doc(profissionalId);
-
-      await _firestore.runTransaction((tx) async {
-        final doc = await tx.get(profRef);
-
-        if (!doc.exists) {
-          tx.set(profRef, {
-            "pacientes": [pacienteId]
-          });
-        } else {
-          List<dynamic> lista = doc.data()?["pacientes"] ?? [];
-          if (!lista.contains(pacienteId)) lista.add(pacienteId);
-          tx.update(profRef, {"pacientes": lista});
-        }
+      // 🆕 Se não existir → cria nova
+      await _firestore.collection("vinculacoes").add({
+        "profissionalId": profissionalId,
+        "profissionalNome": profissionalNome,
+        "pacienteEmail": email,
+        "status": "pendente",
+        "createdAt": FieldValue.serverTimestamp(),
+        "createdBy": "profissional",
       });
 
-      // ======================================================
-      // 4 ▸ Atualizar paciente → profissionais
-      // ======================================================
-      final pacienteRef =
-      _firestore.collection("paciente_profissionais").doc(pacienteId);
-
-      await _firestore.runTransaction((tx) async {
-        final doc = await tx.get(pacienteRef);
-
-        if (!doc.exists) {
-          tx.set(pacienteRef, {
-            "profissionais": [profissionalId]
-          });
-        } else {
-          List<dynamic> lista = doc.data()?["profissionais"] ?? [];
-          if (!lista.contains(profissionalId)) lista.add(profissionalId);
-          tx.update(pacienteRef, {"profissionais": lista});
-        }
-      });
-
-      // ======================================================
-      // 5 ▸ 🔥 ATUALIZA O DOCUMENTO USERS/{pacienteId}
-      // (É AQUI QUE FALTAVA!!!)
-      // ======================================================
-      await _firestore.collection("users").doc(pacienteId).set({
-        "profissionaisVinculados":
-        FieldValue.arrayUnion([profissionalId]),
-      }, SetOptions(merge: true));
-
-      return null; // ✔ sucesso
+      return null;
     } catch (e) {
-      debugPrint("❌ Erro ao adicionar paciente: $e");
-      return "Erro ao adicionar paciente.";
+      debugPrint("❌ Erro ao enviar solicitação: $e");
+      return "Erro ao enviar solicitação.";
     }
   }
 }

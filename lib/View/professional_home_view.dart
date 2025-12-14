@@ -6,7 +6,7 @@ import 'package:android2/theme/colors.dart';
 import 'package:android2/View/add_patient_view.dart';
 import 'package:android2/View/profile_view.dart';
 import 'package:android2/View/patient_calendar_view.dart';
-import 'package:android2/View/professional_mural_view.dart';   // <<<<<<<<<< IMPORTANTE
+import 'package:android2/View/professional_mural_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfessionalHomeView extends StatefulWidget {
@@ -36,13 +36,11 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
         centerTitle: true,
-
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
@@ -52,15 +50,13 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
             }
           },
         ),
-
         title: Text(
           "Olá, ${widget.profissionalNome.split(' ').first}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -68,40 +64,17 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
                   MaterialPageRoute(builder: (_) => const ProfileView()),
                 );
               },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.4),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                ),
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 26),
             ),
           ),
         ],
       ),
-
       body: Stack(
         children: [
           _buildBackground(),
-
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
-
+              padding: const EdgeInsets.all(20),
               child: ValueListenableBuilder<List<PatientModel>>(
                 valueListenable: controller.pacientes,
                 builder: (context, pacientes, _) {
@@ -111,10 +84,8 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
 
                   return ListView.builder(
                     itemCount: pacientes.length,
-                    itemBuilder: (context, index) {
-                      final paciente = pacientes[index];
-                      return _cardPaciente(paciente);
-                    },
+                    itemBuilder: (_, index) =>
+                        _cardPaciente(pacientes[index]),
                   );
                 },
               ),
@@ -122,7 +93,6 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.blueLogo,
         icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
@@ -136,9 +106,8 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
             MaterialPageRoute(
               builder: (_) => AddPatientView(
                 profissionalId: widget.profissionalId,
-                onPacienteAdicionado: () {
-                  controller.carregarPacientes(widget.profissionalId);
-                },
+                profissionalNome: widget.profissionalNome,
+                onPacienteAdicionado: () {},
               ),
             ),
           );
@@ -147,145 +116,60 @@ class _ProfessionalHomeViewState extends State<ProfessionalHomeView> {
     );
   }
 
-  // ============================================================
-  // 🔹 CARD DE PACIENTE (AGORA COM BOTÃO DE MURAL)
-  // ============================================================
-
   Widget _cardPaciente(PatientModel paciente) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.blueLogo.withOpacity(0.1),
-                child: const Icon(Icons.person, color: Colors.black54),
-              ),
-
-              title: Text(
-                paciente.nome,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-
-              subtitle: Text(paciente.email),
-
-              // ⭐ AQUI ENTRA O NOVO TRAILING ⭐
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 🔵 abrir mural
-                  IconButton(
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    color: AppColors.blueLogo,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProfessionalMuralView(
-                            pacienteId: paciente.id,
-                            pacienteNome: paciente.nome,
-                          ),
-                        ),
-                      );
-                    },
+    return ListTile(
+      title: Text(paciente.nome),
+      subtitle: Text(paciente.email),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProfessionalMuralView(
+                    pacienteId: paciente.id,
+                    pacienteNome: paciente.nome,
                   ),
-
-                  // ➜ seta de "ver calendário"
-                  IconButton(
-                    icon: const Icon(Icons.calendar_month_outlined),
-                    color: Colors.black87,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PatientCalendarView(
-                            pacienteId: paciente.id,
-                            pacienteNome: paciente.nome,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
-        ),
+          IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PatientCalendarView(
+                    pacienteId: paciente.id,
+                    pacienteNome: paciente.nome,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 
-  // ============================================================
-
-  Widget _buildBackground() {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.blueLogo.withOpacity(0.85),
-                Colors.white,
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: -80,
-          left: -100,
-          child: _bubble(300, AppColors.blueLogo.withOpacity(0.25)),
-        ),
-        Positioned(
-          top: 100,
-          right: -80,
-          child: _bubble(220, AppColors.blueLogo.withOpacity(0.20)),
-        ),
-        Positioned(
-          bottom: -60,
-          left: -60,
-          child: _bubble(250, AppColors.blueLogo.withOpacity(0.18)),
-        ),
-      ],
-    );
-  }
-
-  Widget _mensagemSemPacientes() {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Text(
-              "Nenhum paciente adicionado ainda.\nAdicione seu primeiro paciente abaixo!",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black87),
-            ),
-          ),
-        ),
+  Widget _buildBackground() => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.blueLogo.withOpacity(0.85), Colors.white],
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _bubble(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
+  Widget _mensagemSemPacientes() => const Center(
+    child: Text(
+      "Nenhum paciente vinculado ainda.",
+      textAlign: TextAlign.center,
+    ),
+  );
 }

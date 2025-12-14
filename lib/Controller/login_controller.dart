@@ -17,7 +17,9 @@ class LoginController {
     if (!formKey.currentState!.validate()) return;
 
     try {
-      // Login com Firebase Authentication
+      // ============================================================
+      // 🔐 LOGIN
+      // ============================================================
       final credential = await _auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
@@ -26,16 +28,14 @@ class LoginController {
       final user = credential.user;
       if (user == null) throw FirebaseAuthException(code: "user-null");
 
-      // 🔍 Tenta buscar o usuário primeiro como profissional
-      final profissionalSnap = await _firestore
-          .collection('professionals')
-          .doc(user.uid)
-          .get();
+      // ============================================================
+      // 🔍 IDENTIFICA TIPO DE USUÁRIO
+      // ============================================================
+      final profissionalSnap =
+      await _firestore.collection('professionals').doc(user.uid).get();
 
-      // 🔍 Se não for profissional, tenta buscar como PACIENTE na coleção CORRETA
       final pacienteSnap =
       await _firestore.collection('users').doc(user.uid).get();
-      //  ⬆️ AQUI era 'patients', agora é 'users'
 
       if (!profissionalSnap.exists && !pacienteSnap.exists) {
         throw Exception("Usuário não encontrado no banco de dados.");
@@ -54,7 +54,20 @@ class LoginController {
         isProfissional = false;
       }
 
-      // Redirecionamento com base no tipo de usuário
+      // ============================================================
+      // 👤 SE FOR PACIENTE → VERIFICA VINCULAÇÕES PENDENTES
+      // ============================================================
+      if (!isProfissional) {
+        await _verificarVinculacoesPendentes(
+          context,
+          user.email!,
+          user.uid,
+        );
+      }
+
+      // ============================================================
+      // 🚀 REDIRECIONAMENTO
+      // ============================================================
       if (context.mounted) {
         if (isProfissional) {
           Navigator.pushReplacement(
@@ -82,27 +95,133 @@ class LoginController {
           mensagemErro = 'Nenhum usuário encontrado com este e-mail.';
           break;
         case 'wrong-password':
-          mensagemErro = 'Senha incorreta. Por favor, tente novamente.';
+          mensagemErro = 'Senha incorreta.';
           break;
         case 'invalid-email':
           mensagemErro = 'O formato do e-mail é inválido.';
           break;
         default:
-          mensagemErro = 'Ocorreu um erro ao fazer login. Tente novamente.';
+          mensagemErro = 'Erro ao fazer login.';
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensagemErro)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(mensagemErro)));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: ${e.toString()}")),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Erro: $e")));
       }
     }
+  }
+
+  // ============================================================
+  // 🔔 VERIFICA VINCULAÇÕES PENDENTES
+  // ============================================================
+  Future<void> _verificarVinculacoesPendentes(
+      BuildContext context,
+      String email,
+      String pacienteId,
+      ) async {
+    final snap = await _firestore
+        .collection('vinculacoes')
+        .where('pacienteEmail', isEqualTo: email)
+        .where('status', isEqualTo: 'pendente')
+        .get();
+
+    for (final doc in snap.docs) {
+      final data = doc.data();
+      final profissionalNome = data['profissionalNome'] ?? 'Profissional';
+
+      final aceitar = await _mostrarDialogConsentimento(
+        context,
+        profissionalNome,
+      );
+
+      if (aceitar == null) return;
+
+      if (aceitar) {
+        await _aceitarVinculacao(doc.id, data['profissionalId'], pacienteId);
+      } else {
+        await _recusarVinculacao(doc.id);
+      }
+    }
+  }
+
+  // ============================================================
+  // 🪟 DIALOG DE CONSENTIMENTO
+  // ============================================================
+  Future<bool?> _mostrarDialogConsentimento(
+      BuildContext context,
+      String profissionalNome,
+      ) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Solicitação de vínculo"),
+        content: Text(
+          "$profissionalNome deseja se vincular a você.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Recusar"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Aceitar"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ✅ ACEITAR VINCULAÇÃO (CRIA VÍNCULO DEFINITIVO)
+  // ============================================================
+  Future<void> _aceitarVinculacao(
+      String docId,
+      String profissionalId,
+      String pacienteId,
+      ) async {
+    // Atualiza status
+    await _firestore.collection('vinculacoes').doc(docId).update({
+      'status': 'aceito',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
+
+    // profissional → pacientes
+    await _firestore
+        .collection('profissional_pacientes')
+        .doc(profissionalId)
+        .set({
+      'pacientes': FieldValue.arrayUnion([pacienteId])
+    }, SetOptions(merge: true));
+
+    // paciente → profissionais
+    await _firestore
+        .collection('paciente_profissionais')
+        .doc(pacienteId)
+        .set({
+      'profissionais': FieldValue.arrayUnion([profissionalId])
+    }, SetOptions(merge: true));
+
+    // users
+    await _firestore.collection('users').doc(pacienteId).set({
+      'profissionaisVinculados': FieldValue.arrayUnion([profissionalId]),
+    }, SetOptions(merge: true));
+  }
+
+  // ============================================================
+  // ❌ RECUSAR VINCULAÇÃO
+  // ============================================================
+  Future<void> _recusarVinculacao(String docId) async {
+    await _firestore.collection('vinculacoes').doc(docId).update({
+      'status': 'recusado',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   void dispose() {
