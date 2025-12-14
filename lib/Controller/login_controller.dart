@@ -55,17 +55,6 @@ class LoginController {
       }
 
       // ============================================================
-      // 👤 SE FOR PACIENTE → VERIFICA VINCULAÇÕES PENDENTES
-      // ============================================================
-      if (!isProfissional) {
-        await _verificarVinculacoesPendentes(
-          context,
-          user.email!,
-          user.uid,
-        );
-      }
-
-      // ============================================================
       // 🚀 REDIRECIONAMENTO
       // ============================================================
       if (context.mounted) {

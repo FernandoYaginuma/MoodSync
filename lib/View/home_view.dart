@@ -5,6 +5,8 @@ import 'package:android2/Model/day_model.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/View/patient_profile_view.dart';
 import 'package:android2/View/patient_mural_view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -17,10 +19,123 @@ class _HomeViewState extends State<HomeView> {
   final HomeController controller = HomeController.instance;
   DateTime _focusedDay = DateTime.now();
 
+  bool _checouVinculacoes = false;
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
     controller.carregarDadosUsuario();
+
+    // ✅ Checa vínculos pendentes APÓS a tela renderizar (diálogo aparece na Home, não no Login)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _checouVinculacoes) return;
+      _checouVinculacoes = true;
+      _verificarVinculacoesPendentes();
+    });
+  }
+
+  Future<void> _verificarVinculacoesPendentes() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email;
+    final pacienteId = user?.uid;
+
+    if (!mounted || email == null || pacienteId == null) return;
+
+    final snap = await _firestore
+        .collection('vinculacoes')
+        .where('pacienteEmail', isEqualTo: email)
+        .where('status', isEqualTo: 'pendente')
+        .get();
+
+    for (final doc in snap.docs) {
+      if (!mounted) return;
+
+      final data = doc.data();
+      final profissionalNome = data['profissionalNome'] ?? 'Profissional';
+      final profissionalId = data['profissionalId'];
+
+      if (profissionalId == null) continue;
+
+      final aceitar = await _mostrarDialogConsentimento(
+        context,
+        profissionalNome,
+      );
+
+      // se por algum motivo voltou null, para o fluxo
+      if (!mounted || aceitar == null) return;
+
+      if (aceitar) {
+        await _aceitarVinculacao(doc.id, profissionalId, pacienteId);
+      } else {
+        await _recusarVinculacao(doc.id);
+      }
+    }
+  }
+
+  Future<bool?> _mostrarDialogConsentimento(
+    BuildContext context,
+    String profissionalNome,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Solicitação de vínculo"),
+        content: Text("$profissionalNome deseja se vincular a você."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Recusar"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Aceitar"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _aceitarVinculacao(
+    String docId,
+    String profissionalId,
+    String pacienteId,
+  ) async {
+    // atualiza status da solicitação
+    await _firestore.collection('vinculacoes').doc(docId).update({
+      'status': 'aceito',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
+
+    // profissional → pacientes
+    await _firestore
+        .collection('profissional_pacientes')
+        .doc(profissionalId)
+        .set({
+      'pacientes': FieldValue.arrayUnion([pacienteId])
+    }, SetOptions(merge: true));
+
+    // paciente → profissionais
+    await _firestore
+        .collection('paciente_profissionais')
+        .doc(pacienteId)
+        .set({
+      'profissionais': FieldValue.arrayUnion([profissionalId])
+    }, SetOptions(merge: true));
+
+    // users
+    await _firestore.collection('users').doc(pacienteId).set({
+      'profissionaisVinculados': FieldValue.arrayUnion([profissionalId]),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _recusarVinculacao(String docId) async {
+    await _firestore.collection('vinculacoes').doc(docId).update({
+      'status': 'recusado',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
@@ -47,7 +162,6 @@ class _HomeViewState extends State<HomeView> {
                     builder: (_) => const PatientProfileView(),
                   ),
                 ).then((_) {
-                  // Quando voltar do perfil, recarrega os dados do usuário
                   controller.carregarDadosUsuario();
                   setState(() {});
                 });
@@ -275,7 +389,8 @@ class _HomeViewState extends State<HomeView> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              margin:
+                                  const EdgeInsets.symmetric(vertical: 6),
                               child: ListTile(
                                 leading: const Icon(
                                   Icons.sentiment_satisfied_alt_outlined,
