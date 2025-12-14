@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../Model/day_model.dart';
+import '../Model/activity_model.dart';
 
 class PatientDayController {
   final String pacienteId;
@@ -27,5 +28,30 @@ class PatientDayController {
     if (!snap.exists) return null;
 
     return DayModel.fromFirestore(snap);
+  }
+
+  // 🔵 Busca as atividades (nome/ícone) a partir dos IDs salvos no day.activityIds
+  // (Firestore whereIn tem limite de 10, então fazemos em lotes)
+  Future<List<ActivityModel>> carregarAtividadesPorIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+
+    final List<ActivityModel> found = [];
+
+    for (var i = 0; i < ids.length; i += 10) {
+      final chunk = ids.sublist(i, (i + 10 > ids.length) ? ids.length : i + 10);
+
+      final snap = await _firestore
+          .collection('activities')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+
+      for (final doc in snap.docs) {
+        found.add(ActivityModel.fromFirestore(doc.data(), doc.id));
+      }
+    }
+
+    // Mantém a ordem original do "ids"
+    final map = {for (final a in found) a.id: a};
+    return ids.where(map.containsKey).map((id) => map[id]!).toList();
   }
 }

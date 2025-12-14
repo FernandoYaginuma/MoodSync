@@ -26,7 +26,12 @@ class LoginController {
       );
 
       final user = credential.user;
-      if (user == null) throw FirebaseAuthException(code: "user-null");
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: "user-null",
+          message: "Usuário veio nulo após login.",
+        );
+      }
 
       // ============================================================
       // 🔍 IDENTIFICA TIPO DE USUÁRIO
@@ -38,7 +43,9 @@ class LoginController {
       await _firestore.collection('users').doc(user.uid).get();
 
       if (!profissionalSnap.exists && !pacienteSnap.exists) {
-        throw Exception("Usuário não encontrado no banco de dados.");
+        throw Exception(
+          "Usuário autenticou, mas não existe em 'professionals' nem em 'users'.",
+        );
       }
 
       String nome;
@@ -46,38 +53,44 @@ class LoginController {
 
       if (profissionalSnap.exists) {
         final data = profissionalSnap.data()!;
-        nome = data['nome'] ?? 'Profissional';
+        nome = (data['nome'] ?? 'Profissional').toString();
         isProfissional = true;
       } else {
         final data = pacienteSnap.data()!;
-        nome = data['nome'] ?? 'Paciente';
+        nome = (data['nome'] ?? 'Paciente').toString();
         isProfissional = false;
+
+        // ✅ IMPORTANTE:
+        // Não verificar vínculos aqui, senão o dialog aparece na tela de login.
+        // A HomeView já faz isso no initState (post frame).
       }
 
       // ============================================================
       // 🚀 REDIRECIONAMENTO
       // ============================================================
-      if (context.mounted) {
-        if (isProfissional) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProfessionalHomeView(
-                profissionalId: user.uid,
-                profissionalNome: nome,
-              ),
+      if (!context.mounted) return;
+
+      if (isProfissional) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProfessionalHomeView(
+              profissionalId: user.uid,
+              profissionalNome: nome,
             ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HomeView(),
-            ),
-          );
-        }
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomeView(),
+          ),
+        );
       }
     } on FirebaseAuthException catch (e) {
+      debugPrint("FIREBASE AUTH ERROR -> code=${e.code} message=${e.message}");
+
       String mensagemErro;
       switch (e.code) {
         case 'user-not-found':
@@ -89,128 +102,47 @@ class LoginController {
         case 'invalid-email':
           mensagemErro = 'O formato do e-mail é inválido.';
           break;
+        case 'network-request-failed':
+          mensagemErro =
+          'Falha de rede no dispositivo. Verifique internet/Wi-Fi.';
+          break;
+        case 'too-many-requests':
+          mensagemErro = 'Muitas tentativas. Aguarde e tente novamente.';
+          break;
+        case 'operation-not-allowed':
+          mensagemErro =
+          'Login por e-mail/senha não está habilitado no Firebase.';
+          break;
         default:
-          mensagemErro = 'Erro ao fazer login.';
+          mensagemErro = 'Erro ao fazer login (${e.code}).';
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(mensagemErro)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensagemErro)),
+        );
+      }
+    } on FirebaseException catch (e) {
+      // ✅ pega erro real do Firestore (permission-denied, unavailable, etc.)
+      debugPrint("FIRESTORE ERROR -> code=${e.code} message=${e.message}");
+
+      final msg = (e.code == 'permission-denied')
+          ? 'Sem permissão no Firestore (verifique regras).'
+          : 'Erro no Firestore (${e.code}).';
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
       }
     } catch (e) {
+      debugPrint("GENERIC ERROR -> $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Erro: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro: $e")),
+        );
       }
     }
-  }
-
-  // ============================================================
-  // 🔔 VERIFICA VINCULAÇÕES PENDENTES
-  // ============================================================
-  Future<void> _verificarVinculacoesPendentes(
-      BuildContext context,
-      String email,
-      String pacienteId,
-      ) async {
-    final snap = await _firestore
-        .collection('vinculacoes')
-        .where('pacienteEmail', isEqualTo: email)
-        .where('status', isEqualTo: 'pendente')
-        .get();
-
-    for (final doc in snap.docs) {
-      final data = doc.data();
-      final profissionalNome = data['profissionalNome'] ?? 'Profissional';
-
-      final aceitar = await _mostrarDialogConsentimento(
-        context,
-        profissionalNome,
-      );
-
-      if (aceitar == null) return;
-
-      if (aceitar) {
-        await _aceitarVinculacao(doc.id, data['profissionalId'], pacienteId);
-      } else {
-        await _recusarVinculacao(doc.id);
-      }
-    }
-  }
-
-  // ============================================================
-  // 🪟 DIALOG DE CONSENTIMENTO
-  // ============================================================
-  Future<bool?> _mostrarDialogConsentimento(
-      BuildContext context,
-      String profissionalNome,
-      ) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Solicitação de vínculo"),
-        content: Text(
-          "$profissionalNome deseja se vincular a você.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Recusar"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Aceitar"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // ✅ ACEITAR VINCULAÇÃO (CRIA VÍNCULO DEFINITIVO)
-  // ============================================================
-  Future<void> _aceitarVinculacao(
-      String docId,
-      String profissionalId,
-      String pacienteId,
-      ) async {
-    // Atualiza status
-    await _firestore.collection('vinculacoes').doc(docId).update({
-      'status': 'aceito',
-      'respondedAt': FieldValue.serverTimestamp(),
-    });
-
-    // profissional → pacientes
-    await _firestore
-        .collection('profissional_pacientes')
-        .doc(profissionalId)
-        .set({
-      'pacientes': FieldValue.arrayUnion([pacienteId])
-    }, SetOptions(merge: true));
-
-    // paciente → profissionais
-    await _firestore
-        .collection('paciente_profissionais')
-        .doc(pacienteId)
-        .set({
-      'profissionais': FieldValue.arrayUnion([profissionalId])
-    }, SetOptions(merge: true));
-
-    // users
-    await _firestore.collection('users').doc(pacienteId).set({
-      'profissionaisVinculados': FieldValue.arrayUnion([profissionalId]),
-    }, SetOptions(merge: true));
-  }
-
-  // ============================================================
-  // ❌ RECUSAR VINCULAÇÃO
-  // ============================================================
-  Future<void> _recusarVinculacao(String docId) async {
-    await _firestore.collection('vinculacoes').doc(docId).update({
-      'status': 'recusado',
-      'respondedAt': FieldValue.serverTimestamp(),
-    });
   }
 
   void dispose() {

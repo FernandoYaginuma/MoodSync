@@ -17,7 +17,6 @@ class ProfessionalRegisterController {
     if (!formKey.currentState!.validate()) return;
 
     try {
-      // Cria o usuário no Firebase Auth
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
@@ -26,9 +25,8 @@ class ProfessionalRegisterController {
       final user = cred.user;
 
       if (user != null) {
-        // Cria o documento na coleção de profissionais
         await FirebaseFirestore.instance
-            .collection('professionals') // <-- nome padronizado
+            .collection('professionals')
             .doc(user.uid)
             .set({
           'id': user.uid,
@@ -38,15 +36,12 @@ class ProfessionalRegisterController {
           'especialidade': especialidadeController.text.trim(),
           'registroProfissional': registroProfissionalController.text.trim(),
           'descricao': descricaoController.text.trim(),
-          'role': 'profissional', // <-- importante para login
+          'role': 'profissional',
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        // Também salva no documento "users" (para login universal)
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set({
+        // Documento universal
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'id': user.uid,
           'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
@@ -60,10 +55,13 @@ class ProfessionalRegisterController {
               content: Text('Cadastro de profissional realizado com sucesso!'),
             ),
           );
+
+          // ✅ agora '/login' existe no main.dart
           Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       }
     } on FirebaseAuthException catch (e) {
+      debugPrint("❌ PROFESSIONAL REGISTER AUTH ERROR -> ${e.code} ${e.message}");
       String msg;
       switch (e.code) {
         case 'email-already-in-use':
@@ -79,7 +77,15 @@ class ProfessionalRegisterController {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
+    } on FirebaseException catch (e) {
+      debugPrint("❌ PROFESSIONAL REGISTER FIRESTORE ERROR -> ${e.code} ${e.message}");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro no Firestore (${e.code}).')),
+        );
+      }
     } catch (e) {
+      debugPrint("❌ PROFESSIONAL REGISTER ERROR -> $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro inesperado: $e')),

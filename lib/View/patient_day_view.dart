@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:android2/Controller/patient_day_controller.dart';
 import 'package:android2/theme/colors.dart';
 import 'package:android2/Model/day_model.dart';
+import 'package:android2/Model/activity_model.dart';
 
 class PatientDayView extends StatefulWidget {
   final String pacienteId;
@@ -20,8 +21,12 @@ class PatientDayView extends StatefulWidget {
 
 class _PatientDayViewState extends State<PatientDayView> {
   late final PatientDayController controller;
+
   DayModel? day;
   bool carregando = true;
+
+  // ✅ Agora vamos mostrar NOME das atividades (não o ID)
+  List<ActivityModel> atividades = [];
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -51,9 +56,16 @@ class _PatientDayViewState extends State<PatientDayView> {
 
   Future<void> carregar() async {
     final result = await controller.carregarDia();
+
+    List<ActivityModel> atvs = [];
+    if (result?.activityIds.isNotEmpty == true) {
+      atvs = await controller.carregarAtividadesPorIds(result!.activityIds);
+    }
+
     if (mounted) {
       setState(() {
         day = result;
+        atividades = atvs;
         carregando = false;
       });
     }
@@ -62,6 +74,10 @@ class _PatientDayViewState extends State<PatientDayView> {
   @override
   Widget build(BuildContext context) {
     final safeDate = _dateOnly(widget.date);
+
+    final nomesAtividades = atividades.isNotEmpty
+        ? atividades.map((a) => a.name).where((n) => n.trim().isNotEmpty).toList()
+        : const <String>[];
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -81,68 +97,75 @@ class _PatientDayViewState extends State<PatientDayView> {
       body: carregando
           ? const Center(child: CircularProgressIndicator())
           : Stack(
-              children: [
-                _buildBackground(),
-                SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: ClipRRect(
+        children: [
+          _buildBackground(),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.88),
                       borderRadius: BorderRadius.circular(22),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                        child: Container(
-                          padding: const EdgeInsets.all(22),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.88),
-                            borderRadius: BorderRadius.circular(22),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _secaoTitulo("Sentimentos"),
-                              _caixa(
-                                (day?.emotions.isNotEmpty ?? false)
-                                    ? day!.emotions.join(', ')
-                                    : "Sem sentimentos registrados",
-                              ),
-                              const SizedBox(height: 24),
-                              _secaoTitulo("Anotação"),
-                              _caixa(
-                                (day?.note.trim().isNotEmpty ?? false)
-                                    ? day!.note
-                                    : "Sem anotação registrada",
-                              ),
-                              if (day?.activityIds.isNotEmpty == true) ...[
-                                const SizedBox(height: 24),
-                                _secaoTitulo("Atividades"),
-                                _caixa(day!.activityIds.join(", ")),
-                              ],
-                              if (day?.lastUpdatedAt != null) ...[
-                                const SizedBox(height: 28),
-                                Text(
-                                  "Última atualização: ${_fmtDateTime(day!.lastUpdatedAt!)}",
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _secaoTitulo("Sentimentos"),
+                        _caixa(
+                          (day?.emotions.isNotEmpty ?? false)
+                              ? day!.emotions.join(', ')
+                              : "Sem sentimentos registrados",
+                        ),
+                        const SizedBox(height: 24),
+                        _secaoTitulo("Anotação"),
+                        _caixa(
+                          (day?.note.trim().isNotEmpty ?? false)
+                              ? day!.note
+                              : "Sem anotação registrada",
+                        ),
+
+                        // ✅ Atividades: agora exibe nomes (ou fallback para IDs)
+                        if (day?.activityIds.isNotEmpty == true) ...[
+                          const SizedBox(height: 24),
+                          _secaoTitulo("Atividades"),
+                          if (nomesAtividades.isNotEmpty)
+                            _caixa(nomesAtividades.join(", "))
+                          else
+                          // fallback: caso alguma activity não exista mais na coleção
+                            _caixa(day!.activityIds.join(", ")),
+                        ],
+
+                        if (day?.lastUpdatedAt != null) ...[
+                          const SizedBox(height: 28),
+                          Text(
+                            "Última atualização: ${_fmtDateTime(day!.lastUpdatedAt!)}",
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
 
